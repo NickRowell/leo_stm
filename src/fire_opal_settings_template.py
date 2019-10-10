@@ -13,10 +13,11 @@ flow.
 """ Directory Paths
 """
 txtpath = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/txt/'
-streaks_data = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/streaks_data.txt'
+output = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/'
+#streaks_data = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/streaks_data.txt'
 # .txt file that stores data relating to satellite streaks extracted from
 # image batch processing
-processingrecord = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/processed_images.txt'
+#processingrecord = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/processed_images.txt'
 # .txt file that records filenames of images as they are processed, this 
 # avoids re-processing of images if there is an error or the program crashes
 datadirectory = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/test_set/'
@@ -25,11 +26,11 @@ pythonpath = 'C:/WPy64-3720/python-3.7.2.amd64/python.exe'
 # Location of Python distribution (needed for command line in Windows)
 clientpath = 'C:/WPy64-3720/python-3.7.2.amd64/Lib/nova_client.py'
 # Location of Astrometry.net API client script
-detectionpath = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/'
-uploads_from = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/'
+#detectionpath = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/'
+#uploads_from = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/'
 # Folder containing small images with detected streaks to be sent to
 # Astrometry.net
-wcs_goes_to = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/wcs/'
+#wcs_goes_to = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/wcs/'
 # Folder into which WCS files are saved when sent back from Astrometry.net
 
 

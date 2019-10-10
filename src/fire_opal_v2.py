@@ -219,7 +219,7 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
         # If image is cloudy, records as 'cloudy'
 
 
-def process_list(filelist):
+def process_list(filelist, output):
     for file in filelist:
     # The first loop processes all images in a directory and returns a text file
     # containing streak data. The data consists of the filename of
@@ -227,11 +227,11 @@ def process_list(filelist):
     # timestamp information used in the next step to calculate orbits.
         print(file)
         
-        streaks = open(streaks_data,'a+')
+        streaks = open(output + '/streaks_data.txt','a+')
         # Creates a .txt document to store data extracted from image processing loop
-        processed_images = open(processingrecord, 'a+')
+        processed_images = open(output + '/processed_images.txt', 'a+')
         # Creates a .txt document to store filenames of images as they are processed
-        processed_images_read = open(processingrecord, 'r')   
+        processed_images_read = open(output + '/processed_images.txt', 'r')   
         # Read-only version of processing record
         already_processed = processed_images_read.read().split()
         
@@ -257,4 +257,4 @@ def process_list(filelist):
             
 if __name__ == "__main__":                
     filelist = os.listdir(datadirectory)
-    process_list(filelist)
+    process_list(filelist, output)

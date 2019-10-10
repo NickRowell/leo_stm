@@ -1,7 +1,8 @@
-import os
+import os, sys, time
 from fire_opal_settings import *
 from fire_opal_v2 import process_list
 
+# is this running as part of a parallel process
 if 'SLURM_ARRAY_TASK_COUNT' in os.environ:
     task_count = int(os.environ['SLURM_ARRAY_TASK_COUNT'])
     task_min   = int(os.environ['SLURM_ARRAY_TASK_MIN'])
@@ -11,9 +12,36 @@ else:
     task_min   = 0
     task_id    = 0
 
-
+# list of files to be processed
 filelist = os.listdir(datadirectory)
+if len(filelist) == 0:
+    print('No files found %s', datadirectory)
+
+# get the date at the beginning of the night
+filelist = sorted(filelist)
+first = filelist[0]
+tok = first.split('_')
+try:
+    date = tok[1]
+except:
+    print('cannot find date in filename %s' % first)
+    sys.exit()
+
+# set up directory for output products
+output           = output + '/' + date
+
+# will be exception 'FileExistsError' if already exists
+if task_id == task_min:
+    os.mkdir(output)
+    os.mkdir(output + '/detected_streaks')
+else:
+    # wait a bit, make sure the directory has been created
+    time.sleep(10)
+
+# list of all the files, split into "my" files
 myfilelist = filelist[task_id-task_min : : task_count]
 print('processor %d of %d has %d files' % (task_id-task_min, task_count, len(myfilelist)))
-process_list(myfilelist)
+
+# and off we go
+process_list(myfilelist, output)
 
