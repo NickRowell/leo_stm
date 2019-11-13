@@ -52,20 +52,24 @@ def cloudy_or_clear(greyimage):
     
     """
 
-    c = np.abs(greyimage.astype('float64') - gaussian_filter(greyimage, cl_sigma).astype('float64'))
     # Make a defocused copy of original image and subtract from original
     # A cloudy input image results in pure noise, while a clear input image
     # has points.
-    
+    c = np.abs(greyimage.astype('float64') - gaussian_filter(greyimage, cl_sigma).astype('float64'))
+
+    # Extract rectangular region for cloudy/clear determination
     subimage = c[row1:row2, col1:col2]
-    ignore = len(subimage[np.where(subimage<=cl_background_thresh)]) 
+
     # Count the number of pixels in the subimage below an intensity threshold 
-    # defined as the background. 
-    
-    perc = 100*(len(subimage[np.where(subimage>cl_lower_thresh)]))/(500*500 - ignore + 1)
+    # defined as the background.
+    ignore = len(subimage[np.where(subimage<=cl_background_thresh)])
+
     # Calculate the percentage of pixels above the brightness threshold, after
-    # low-intensity background pixels have been disregarded.   
-    
+    # low-intensity background pixels have been disregarded.
+    # TODO: this 500*500 should be replaced with the image dimensions from the settings
+    source = len(subimage[np.where(subimage>cl_lower_thresh)])
+    perc = 100*(source)/(500*500 - ignore + 1)
+
     if perc > 0.:
         return True, greyimage
     else:
@@ -103,15 +107,22 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
     # Returns True if the image is clear and False if cloudy
     # Also returns the greyscale image for further processing
 
+    # TODO simply this conditional
     if is_it_clear == True:
-        
+
+        # Denormalise image
         greyscale_image *= 255.0
-        edges = cv2.Canny(greyscale_image.astype('uint8'), definitely_not_an_edge, definitely_an_edge, apertureSize=3)
-        lines = cv2.HoughLinesP(edges, 1, np.pi/180, line_votes, minLineLength=50, maxLineGap=5)
+
         # First a Canny edge detector creates a binary black and white image
-        # in which edges are shown in white. Next the Hough Line Parameters
+        # in which edges are shown in white.
+        edges = cv2.Canny(greyscale_image.astype('uint8'), definitely_not_an_edge, definitely_an_edge, apertureSize=3)
+
+        # cv2.imwrite(str(output) + '/detected_streaks/' + str(filename), box_around_streak)
+
+        # Next the Hough Line Parameters
         # transform calculates which edges are lines and returns the endpoints
         # of the lines.
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, line_votes, minLineLength=50, maxLineGap=5)
 
         if lines is not None: 
             

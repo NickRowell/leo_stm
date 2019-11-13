@@ -24,35 +24,30 @@ apikey = ''
 
 # Variation 1: Algorithm using pixel intensities (cloudy_or_clear) #
 
-cl_background_thresh = 0.1 
 # Pixel intensity threshold for background noise (disregard pixels below
 # this value)
-cl_lower_thresh=0.15 
+cl_background_thresh = 0.05
+
 # Pixel intensity threshold for stars (counts pixels above this intensity)
-cl_sigma=10 
-# Sigma used in Gaussian filter
+cl_lower_thresh=0.1
+
+# Standard deviation of Gaussian filter used to blur the raw image [pixels]
+cl_sigma=10
+
+# Defines boundary of rectangular region used to determine cloudy/clear status
 row1 = int(2000) 
 row2 = int(2500)
 col1 = int(2000)
 col2 = int(2500)
-# Row and column values for subimage
-
-# Variation 2: Algorithm using histogram bins (cloudy_or_clear_alt) #
-# Not being used at the moment
-
-cl_curve_thresh = 0.3
-# Fraction of maximum histogram value where curve width is measured
-axis_comp = 20.0
-# How many times longer should the right-hand tail of the curve be?
 
 # Satellite streak detection parameters
     
 # Canny edge dector
-definitely_not_an_edge = 90 # Below this gradient value, pixel is not an edge
-definitely_an_edge = 180 # Above this gradient value, pixel is definitely an edge
+definitely_not_an_edge = 50 # Below this gradient value, pixel is not an edge
+definitely_an_edge = 100 # Above this gradient value, pixel is definitely an edge
 
 # Hough line transform 
-line_votes = 100 # How many votes for something to count as line (e.g. length of line)
+line_votes = 50 # How many votes for something to count as line (e.g. length of line)
 
 # Section of image that contains streak
 box_length = 600
