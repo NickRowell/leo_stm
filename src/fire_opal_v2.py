@@ -150,12 +150,12 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
             # nova.astrometry.net.
             
             filename = file.replace('.NEF', '_streak.png')
-            cv2.imwrite(str(detectionpath) + str(filename), box_around_streak)
+            cv2.imwrite(str(output) + '/detected_streaks/' + str(filename), box_around_streak)
             # Saves section of image as separate .png image in a folder 
             # designated for uploads to nova.astrometry.net
             
-            uploadpath = str(uploads_from) + str(filename)
-            wcsfile = str(wcs_goes_to) + str(filename).replace('.png', '_wcs.fits')
+            uploadpath = str(output) + '/detected_streaks/' + str(filename)
+            wcsfile = str(output) + '/wcs/' + str(filename).replace('.png', '_wcs.fits')
             # Specifies commands used in the nova.astrometry.net parser:
             # uploadpath is the location+filename of the .png image
             # wcsfile is the location+filename of the resulting wcs file 

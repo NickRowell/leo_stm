@@ -1,50 +1,26 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 11 13:09:30 2019
+# Algorithmic and configuration parameters for the FireOPAL scripts.
 
-@author: Maureen
+# Text file produced by fire_opal_postprocess.py
+txtpath = ''
 
-This file contains settings and parameters used in the Fire Opal process
-flow. 
+# Location for all outputs of fire_opal_v2.py
+output = ''
 
-"""
+# Input directory of *.NEF images for fire_opal_v2.py
+datadirectory = ''
 
+# Path to the python executable
+pythonpath = ''
 
-""" Directory Paths
-"""
-txtpath = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/txt/'
-output = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/'
-#streaks_data = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/streaks_data.txt'
-# .txt file that stores data relating to satellite streaks extracted from
-# image batch processing
-#processingrecord = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/processed_images.txt'
-# .txt file that records filenames of images as they are processed, this 
-# avoids re-processing of images if there is an error or the program crashes
-datadirectory = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/test_set/'
-# Directory containing images to be processed
-pythonpath = 'C:/WPy64-3720/python-3.7.2.amd64/python.exe'
-# Location of Python distribution (needed for command line in Windows)
-clientpath = 'C:/WPy64-3720/python-3.7.2.amd64/Lib/nova_client.py'
-# Location of Astrometry.net API client script
-#detectionpath = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/'
-#uploads_from = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/'
-# Folder containing small images with detected streaks to be sent to
-# Astrometry.net
-#wcs_goes_to = 'C:/Users/inner_000/Desktop/Research/Fire_Opal/detected_streaks/wcs/'
-# Folder into which WCS files are saved when sent back from Astrometry.net
-
-
-""" Astrometry.net API """
+# Location of the Astrometry.NET client
+clientpath = '../nova_client.py'
 
 # An API key is needed to access astrometry.net. The API key is linked
 # to a specific user account.
 apikey = ''
 
 
-
-
-""" Cloudy or Clear?:
-    Variables in process step distinguishing cloudy nights from clear nights """
+# Cloudy/clear image detection parameters
 
 # Variation 1: Algorithm using pixel intensities (cloudy_or_clear) #
 
@@ -69,8 +45,7 @@ cl_curve_thresh = 0.3
 axis_comp = 20.0
 # How many times longer should the right-hand tail of the curve be?
 
-""" Satellite Streak Detection:
-    Variables in process step for extracting satellite streaks """
+# Satellite streak detection parameters
     
 # Canny edge dector
 definitely_not_an_edge = 90 # Below this gradient value, pixel is not an edge
@@ -83,7 +58,7 @@ line_votes = 100 # How many votes for something to count as line (e.g. length of
 box_length = 600
 # Distance in pixels from centre of box to edge, e.g. 250 would give a 500x500 box
 
-""" Post-Processing """
+# Trail assembly and orbit determination parameters
 
 floor_scale = 100
 # The slope is multiplied by this factor. The floor function used in grouping

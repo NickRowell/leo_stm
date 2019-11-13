@@ -34,6 +34,7 @@ output           = output + '/' + date
 if task_id == task_min:
     os.mkdir(output)
     os.mkdir(output + '/detected_streaks')
+    os.mkdir(output + '/wcs')
 else:
     # wait a bit, make sure the directory has been created
     time.sleep(10)
