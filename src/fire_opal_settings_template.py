@@ -49,9 +49,14 @@ definitely_an_edge = 100 # Above this gradient value, pixel is definitely an edg
 # Hough line transform 
 line_votes = 50 # How many votes for something to count as line (e.g. length of line)
 
-# Section of image that contains streak
-box_length = 600
-# Distance in pixels from centre of box to edge, e.g. 250 would give a 500x500 box
+# Parameters for extraction of streak thumbnail image
+
+# Minimum image width/height [pix]. This ensures that short streaks still have a large enough image surrounding
+# them that a reasonable astrometric solution can be found.
+box_length = 1200
+
+# Margin added to the image to ensure the ends of the streak are always at least this far from the image edge [pix].
+streak_margin = 50
 
 # Trail assembly and orbit determination parameters
 
