@@ -96,7 +96,7 @@ def line_from_two_points(x1, y1, x2, y2):
     b = (y2 - m*x2)
     return m, b
 
-def process_image(datadirectory, file, streaks, processed_images, processed_images_read):
+def process_image(datadirectory, file, streaks, processed_images, processed_images_read, output):
     raw = rawpy.imread(datadirectory + file)
     rgb = raw.postprocess()
     grey = convert_to_grey(rgb)
@@ -262,7 +262,7 @@ def process_list(filelist, output):
             # Skips already processed files and continues to next iteration
             
         else: 
-            process_image(datadirectory, file, streaks, processed_images, processed_images_read)
+            process_image(datadirectory, file, streaks, processed_images, processed_images_read, output)
             
             # If the processing throws an error for any reason, the program will
             # write ERROR to the processing record and continue to the
