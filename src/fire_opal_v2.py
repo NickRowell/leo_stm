@@ -152,14 +152,14 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
             centre_ycoordinate = int(y1 + (np.abs(y1-y2)/2.0))  
 
             # Image width & height, including margin if necessary
-            width = max(box_length, 2*streak_margin + np.abs(x1-x2))
-            height = max(box_length, 2*streak_margin + np.abs(y1-y2))
+            width = int(max(box_length, 2*streak_margin + np.abs(x1-x2)))
+            height = int(max(box_length, 2*streak_margin + np.abs(y1-y2)))
             
             # Image boundaries, clamped to edges of the full image
-            x_lo = max(0, centre_xcoordinate - width/2.0)
-            x_hi = min(centre_xcoordinate + width/2.0, len(greyscale_image[1]) - 1)
-            y_lo = max(0, centre_ycoordinate - height/2.0)
-            y_hi = min(centre_ycoordinate + height/2.0, len(greyscale_image[0]) - 1)
+            x_lo = max(0, centre_xcoordinate - int(width/2))
+            x_hi = min(centre_xcoordinate + int(width/2), len(greyscale_image[1]) - 1)
+            y_lo = max(0, centre_ycoordinate - int(height/2))
+            y_hi = min(centre_ycoordinate + int(height/2), len(greyscale_image[0]) - 1)
 
             box_around_streak = greyscale_image[y_lo : y_hi, x_lo : x_hi]
             # Calculates the central pixel of the streak and draws a box around it
