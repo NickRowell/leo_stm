@@ -51,12 +51,12 @@ line_votes = 50 # How many votes for something to count as line (e.g. length of 
 
 # Parameters for extraction of streak thumbnail image
 
-# Minimum image width/height [pix]. This ensures that short streaks still have a large enough image surrounding
-# them that a reasonable astrometric solution can be found.
-box_length = 1200
+# Minimum thumbnail image width/height [pix]. This ensures that short streaks still have a large enough
+# image surrounding them that a reasonable astrometric solution can be found.
+thumbnail_min_diameter = 1000
 
 # Margin added to the image to ensure the ends of the streak are always at least this far from the image edge [pix].
-streak_margin = 50
+thumbnail_streak_margin = 100
 
 # Trail assembly and orbit determination parameters
 

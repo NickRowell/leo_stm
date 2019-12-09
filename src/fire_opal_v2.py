@@ -117,7 +117,8 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
         # in which edges are shown in white.
         edges = cv2.Canny(greyscale_image.astype('uint8'), definitely_not_an_edge, definitely_an_edge, apertureSize=3)
 
-        # cv2.imwrite(str(output) + '/detected_streaks/' + str(filename), box_around_streak)
+        # Write edge detection image to file
+        cv2.imwrite(str(output) + '/detected_streaks/edges.png', edges)
 
         # Next the Hough Line Parameters
         # transform calculates which edges are lines and returns the endpoints
@@ -126,18 +127,31 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
 
         if lines is not None: 
             
+            # More than one streak - MIGHT NOT BE SAFE TO AVERAGE END POINTS!
+            # We're assuming these are multiple lines corresponding to the same streak,
+            # but they might not be if there's more than one streak!
             if lines.shape[0] > 1:
                 
                 # If the satellite streak has a width greater than one pixel,
                 # HoughLineP will interpret it as multiple lines placed very
                 # close together. We solve this by averaging the endpoints of
                 # the lines to get an estimate of the 'real' endpoint.
-                
-                x1 = np.mean(lines[: lines.shape[0],0,0].tolist(), dtype=np.float64)
-                y1 = np.mean(lines[: lines.shape[0],0,1].tolist(), dtype=np.float64)
-                x2 = np.mean(lines[: lines.shape[0],0,2].tolist(), dtype=np.float64)
-                y2 = np.mean(lines[: lines.shape[0],0,3].tolist(), dtype=np.float64)
 
+                #x1 = np.mean(lines[: lines.shape[0],0,0].tolist(), dtype=np.float64)
+                #y1 = np.mean(lines[: lines.shape[0],0,1].tolist(), dtype=np.float64)
+                #x2 = np.mean(lines[: lines.shape[0],0,2].tolist(), dtype=np.float64)
+                #y2 = np.mean(lines[: lines.shape[0],0,3].tolist(), dtype=np.float64)
+
+                # NR: to mitigate the risk of averaging lines that actually correspond
+                # to different streaks, just use the first line
+
+                # First index iterates over the line number, third index iterates over the end
+                # point coordinates
+                x1 = float(lines[0][0][0])
+                y1 = float(lines[0][0][1])
+                x2 = float(lines[0][0][2])
+                y2 = float(lines[0][0][3])
+               
             elif lines.shape[0] == 1:
                 
                 # If HoughLinesP returns only one line, no further processing
@@ -148,12 +162,12 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
                 x2 = float(lines[:,0,2])
                 y2 = float(lines[:,0,3])
             
-            centre_xcoordinate = int(x1 + (np.abs(x1-x2)/2.0))
-            centre_ycoordinate = int(y1 + (np.abs(y1-y2)/2.0))  
+            centre_xcoordinate = int(x1 + (x2-x1)/2.0)
+            centre_ycoordinate = int(y1 + (y2-y1)/2.0)
 
             # Image width & height, including margin if necessary
-            width = int(max(box_length, 2*streak_margin + np.abs(x1-x2)))
-            height = int(max(box_length, 2*streak_margin + np.abs(y1-y2)))
+            width = int(max(thumbnail_min_diameter, 2*thumbnail_streak_margin + np.abs(x1-x2)))
+            height = int(max(thumbnail_min_diameter, 2*thumbnail_streak_margin + np.abs(y1-y2)))
             
             # Image boundaries, clamped to edges of the full image
             x_lo = max(0, centre_xcoordinate - int(width/2))
@@ -162,6 +176,7 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
             y_hi = min(centre_ycoordinate + int(height/2), len(greyscale_image[0]) - 1)
 
             box_around_streak = greyscale_image[y_lo : y_hi, x_lo : x_hi]
+
             # Calculates the central pixel of the streak and draws a box around it
             # with sides of length box_length. This section of the image around
             # the streak is extracted for astrometric calibration using
