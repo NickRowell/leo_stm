@@ -25,8 +25,6 @@ from scipy.ndimage import gaussian_filter
 from astropy.wcs import WCS
 from astropy.io import fits
 
-
-
 def convert_to_grey(rgbimage):
     
     """ This function converts an RGB image to a 
@@ -71,9 +69,9 @@ def cloudy_or_clear(greyimage):
     perc = 100*(source)/(500*500 - ignore + 1)
 
     if perc > 0.:
-        return True, greyimage
+        return True
     else:
-        return False, greyimage
+        return False
     
 
 
@@ -97,21 +95,30 @@ def line_from_two_points(x1, y1, x2, y2):
     return m, b
 
 def process_image(datadirectory, file, streaks, processed_images, processed_images_read, output):
-    raw = rawpy.imread(datadirectory + file)
-    rgb = raw.postprocess()
-    grey = convert_to_grey(rgb)
-    # Reads in RAW image, converts to RGB, converts to grey, in uint8
-    # format for compatibility with cv2 library
-    
-    is_it_clear, greyscale_image = cloudy_or_clear(grey)
-    # Returns True if the image is clear and False if cloudy
-    # Also returns the greyscale image for further processing
 
-    # TODO simply this conditional
+    # Read raw NEF image
+    raw = rawpy.imread(datadirectory + file)
+
+    # Convert to standard RGB pixels [0:255]
+    rgb = raw.postprocess()
+
+    # Convert to greyscale pixels [0:1]
+    greyscale_image = convert_to_grey(rgb)
+
+    # Returns True if the image is clear and False if cloudy
+    is_it_clear = cloudy_or_clear(greyscale_image)
+    
+    # TODO simplify this conditional
     if is_it_clear == True:
 
         # Denormalise image
         greyscale_image *= 255.0
+
+        # Estimate the background image
+        # bkg = cv2.medianBlur(greyscale_image.astype('uint8'), 71)
+
+        # Background subtraction
+        # greyscale_image -= bkg
 
         # First a Canny edge detector creates a binary black and white image
         # in which edges are shown in white.
@@ -162,6 +169,8 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
                 x2 = float(lines[:,0,2])
                 y2 = float(lines[:,0,3])
             
+            # Note - by convention the origin of the image coordinates is at the upper left corner;
+            # x increases to the right and y increases down.
             centre_xcoordinate = int(x1 + (x2-x1)/2.0)
             centre_ycoordinate = int(y1 + (y2-y1)/2.0)
 
@@ -175,82 +184,71 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
             y_lo = max(0, centre_ycoordinate - int(height/2))
             y_hi = min(centre_ycoordinate + int(height/2), len(greyscale_image[0]) - 1)
 
-            box_around_streak = greyscale_image[y_lo : y_hi, x_lo : x_hi]
+            # Extract thumbnail image surrounding streak.
+            streak_image = greyscale_image[y_lo : y_hi, x_lo : x_hi]
 
-            # Calculates the central pixel of the streak and draws a box around it
-            # with sides of length box_length. This section of the image around
-            # the streak is extracted for astrometric calibration using
-            # nova.astrometry.net.
-            
-            filename = file.replace('.NEF', '_streak.png')
-            cv2.imwrite(str(output) + '/detected_streaks/' + str(filename), box_around_streak)
-            # Saves section of image as separate .png image in a folder 
-            # designated for uploads to nova.astrometry.net
-            
-            uploadpath = str(output) + '/detected_streaks/' + str(filename)
-            wcsfile = str(output) + '/wcs/' + str(filename).replace('.png', '_wcs.fits')
-            # Specifies commands used in the nova.astrometry.net parser:
-            # uploadpath is the location+filename of the .png image
-            # wcsfile is the location+filename of the resulting wcs file 
-            # to be downloaded from nova.astrometry.net
-            
-            cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, uploadpath, wcsfile)
+            # Save thumbnail to disk
+            streak_filepath = str(output) + '/detected_streaks/' + file.replace('.NEF', '_streak.png')
+            cv2.imwrite(streak_filepath, streak_image)
+
+            # Location for WCS output from Astrometry.NET
+            wcsfile = str(output) + '/wcs/' + file.replace('.NEF', '_wcs.fits')
+
+            # Compose Astrometry.NET command and run it synchronously (wait for results)
+            cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
             os.system(cmd)
-            # Runs API to nova.astrometry.net. WCS files are returned to the
-            # directory specified in the variable wcs_goes_to
             
-            hdu = fits.open(wcsfile)
-            w = WCS(hdu[0].header)
-            # Opens wcs file and extracts calibration information from header
+            # Load the WCS & extract the calibration info from the header.
             # Note: Throws a warning that the axes of the WCS file are 0 
             # when the expected number of axes is 2. This can be ignored,
             # the program will continue running.
+            hdu = fits.open(wcsfile)
+            w = WCS(hdu[0].header)
             
-            ra1, dec1 = w.wcs_pix2world(x1, y1, 0, ra_dec_order=True)
-            ra2, dec2 = w.wcs_pix2world(x2, y2, 0, ra_dec_order=True)
-            # Uses wcs header information to calculate RA and DEC coordinates
-            # for the x,y endpoints of the streak. RA is always first, DEC second.
-                 
+            # Transform pixel coordinates of streak end points to celestial coordinates.
+            # Remember to translate streak coordinates to thumbnail image frame.
+            ra1, dec1 = w.wcs_pix2world(x1 - x_lo, y1 - y_lo, 0, ra_dec_order=True)
+            ra2, dec2 = w.wcs_pix2world(x2 - x_lo, y2 - y_lo, 0, ra_dec_order=True)
+
+            # Compute line parameters for the streak. These are in the original image frame,
+            # for consistency across image sequences.
             slope, intercept = line_from_two_points(x1, y1, x2, y2)
-            # Fits a line to the streak and records line parameters
-            # for use in post-processing
             
-            filename_list = list(filename)
+            # Extracts timestamp from filename and converts into a datetime object
+            filename_list = list(str(file))
             timestamp = "".join(filename_list[15:21])
             time = datetime.datetime.strptime(timestamp, '%H%M%S')
-            # Extracts timestamp from filename and converts into a
-            # datetime object
-            
+
+            # Sets the times for the streak endpoints to be the image
+            # timestamp and the timestamp + shutter speed.
+            # TODO: Make exposure time a global parameter
             endpointa_time = time.time()
             endpointb_time = (time + datetime.timedelta(seconds=5)).time()
-            # Sets the times for the streak endpoints to be the image
-            # timestamp and the timestamp + shutter speed
             
+            # Writes all extracted data to a .txt file and records
+            # as 'clear_streak'
             streaks.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, timestamp, ra1, dec1, x1, y1, ra2, dec2, x2, y2, endpointa_time, endpointb_time, slope, intercept))                    
             processed_images.write(str(file) + ' clear_streak' + '\n')
             processed_images.close()
             processed_images_read.close()
             streaks.close()
-            # Writes all extracted data to a .txt file and records
-            # as 'clear_streak'
             
         elif lines == None:
             
+            # If image is clear but has no streaks, records as
+            # 'clear_streakless'
             processed_images.write(str(file) + ' clear_streakless' + '\n')
             processed_images.close()
             processed_images_read.close()
             streaks.close()
-            # If image is clear but has no streaks, records as
-            # 'clear_streakless'
                         
     else:
-            
+        
+        # If image is cloudy, records as 'cloudy'
         processed_images.write(str(file) + ' cloudy' + '\n')
         processed_images.close()
         processed_images_read.close()
         streaks.close()
-        # If image is cloudy, records as 'cloudy'
-
 
 def process_list(filelist, output):
     for file in filelist:
