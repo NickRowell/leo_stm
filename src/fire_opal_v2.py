@@ -36,8 +36,6 @@ def convert_to_grey(rgbimage):
     greyimage = np.sum(rgbimage, axis=2)/(3*255.0)
     return greyimage
 
-
-
 def cloudy_or_clear(greyimage):
     
     """ 
@@ -73,7 +71,47 @@ def cloudy_or_clear(greyimage):
     else:
         return False
     
+def normal_line(x1, y1, x2, y2):
 
+    """
+    Calculates the normal representation of the line from two points.
+    Can handle vertical lines.
+
+    Inputs: two sets of (x,y) pixel coordinates
+    Outputs: orientation (theta [rad]) and distance to origin (d)
+
+    The orientation angle is measured anticlockwise from the x axis
+    and lies in the range [-pi:pi]. The distance to origin is always
+    positive.
+    
+    """
+
+    dx = x2-x1
+    dy = y2-y1
+    n = np.sqrt(dx*dx + dy*dy)
+
+    # Compute the unit normal to the line. At this stage it may point
+    # towards or away from the origin.
+    nx = dy/n
+    ny = -dx/n
+
+    # Compute the distance to the origin
+    d = x1 * nx + y1 * ny
+
+    # If this is negative then flip the direction of the normal
+    if d < 0:
+        nx *= -1
+        ny *= -1
+        d *= -1
+
+    # Absolute value of angle measured from x axis to the normal
+    theta = np.arccos(nx)
+
+    # Correct sign
+    if ny < 0:
+        theta *= -1
+
+    return theta, d
 
 def line_from_two_points(x1, y1, x2, y2):
 
@@ -125,12 +163,20 @@ def process_image(datadirectory, file, streaks, processed_images, processed_imag
         edges = cv2.Canny(greyscale_image.astype('uint8'), definitely_not_an_edge, definitely_an_edge, apertureSize=3)
 
         # Write edge detection image to file
-        cv2.imwrite(str(output) + '/detected_streaks/edges.png', edges)
+        # cv2.imwrite(str(output) + '/detected_streaks/edges.png', edges)
 
-        # Next the Hough Line Parameters
-        # transform calculates which edges are lines and returns the endpoints
-        # of the lines.
+        # Perform probabilistic Hough transform to find lines in image.
+        # Returns array of the form [[[x1 y1 x2 y2]], [[x1 y1 x2 y2]], ... ]
         lines = cv2.HoughLinesP(edges, 1, np.pi/180, line_votes, minLineLength=50, maxLineGap=5)
+
+
+        # Draw lines onto original image
+        # Iterates over [[x1 y1 x2 y2]], [[x1 y1 x2 y2]], ...
+        # for line in lines:
+            # From [[x1 y1 x2 y2]] extract [x1 y1 x2 y2]
+        #     x1, y1, x2, y2 = line[0]
+        #     cv2.line(rgb, (x1,y1), (x2,y2), (0,0,255), 2)
+        # cv2.imwrite(str(output) + '/detected_streaks/lines.png',rgb)
 
         if lines is not None: 
             
