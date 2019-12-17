@@ -21,8 +21,6 @@ import numpy as np
 from itertools import groupby
 import more_itertools as mit
 
-
-
 class StreakyImage:
     
     """
@@ -39,8 +37,6 @@ class StreakyImage:
     
     def __repr__(self):
         return "StreakyImage()"
-
-
 
 class Streak:
     
@@ -155,30 +151,41 @@ def deg2HMS(ra, dec):
   
     return str(RA+DEC)
 
-list_of_streaky_images = []
 # Initialize a list to contain the StreakyImage objects created from recorded
 # data
-list_of_satellites = []
+list_of_streaky_images = []
+
 # Initialize a list to contain distinct but unidentified satellites
+list_of_satellites = []
 
 """ Processing starts here """
 """ Data extraction """
-data = open(streaks_data, 'r')
+
 # Opens txt file where data from Fire Opal image processing is stored
-extracted_data = data.readlines()
+data = open(streaks_data, 'r')
+
 # Creates list of lines in the txt file as list of strings
-remove_duplicates = list(dict.fromkeys(extracted_data))
+extracted_data = data.readlines()
+
 # Converts data into a dictionary and then back into a list to remove duplicates
+remove_duplicates = list(dict.fromkeys(extracted_data))
+
 for line_of_data in remove_duplicates:
-    get_data = line_of_data.split(',') # List of data points in a line
+
+    # List of data points in a line
+    get_data = line_of_data.split(',') 
+
     serialno = int(get_data[0][28:32])
-    one_streak = Streak(get_data[0], get_data[1], float(get_data[2]), float(get_data[3]), float(get_data[4]), float(get_data[5]), float(get_data[6]), float(get_data[7]), float(get_data[8]), float(get_data[9]), get_data[10], get_data[11], float(get_data[12]), float(get_data[13]))
+
     # Assigns extracted data to a Streak data object. See fire_opal_settings.py
     # for note about floor_scale, which is multiplying the slope of the streak.
-    streak_image = StreakyImage(get_data[0], get_data[1], one_streak, serialno)
+    one_streak = Streak(get_data[0], get_data[1], float(get_data[2]), float(get_data[3]), float(get_data[4]), float(get_data[5]), float(get_data[6]), float(get_data[7]), float(get_data[8]), float(get_data[9]), get_data[10], get_data[11], float(get_data[12]), float(get_data[13]))
+
     # Assigns Streak object to a Streaky Image object
-    list_of_streaky_images.append(streak_image)
+    streak_image = StreakyImage(get_data[0], get_data[1], one_streak, serialno)
+
     # Creates list of Streaky Image objects
+    list_of_streaky_images.append(streak_image)
 
 """ Identification of satellite trail over multiple images """
 #slope_list = []
@@ -193,43 +200,56 @@ for line_of_data in remove_duplicates:
 ## Streaks with the same slope are assumed to be the same streak
 
 serialno_list = []
+
+# Creates a list of image serial numbers from all images
 for streakyimage in list_of_streaky_images:
     serialno_list.append(streakyimage.serialno)
-# Creates a list of image serial numbers from all images
+
 unique_satellites = []
+
+# Creates a list of lists - each sublist is a grouping of consecutive serial
+# numbers, e.g. [[196, 197, 198], [943, 944], [1112, 1113, 1114, 1115], ...]
 for group in mit.consecutive_groups(serialno_list):
     unique_satellites.append(list(group))
-# Creates a list of lists - each sublist is a grouping of consecutive serial
-# numbers, e.g. [[196, 197, 198], [943, 944], [1112, 1113, 1114, 1115], ...]    
+
 satellites_with_enough_data = []
+
+# We need at least two images of the same streak for the orbit determination.
+# This code discards satellites for which we have only one image.
 for sat in unique_satellites:
     if len(sat) < 2:
         continue
     else:
         satellites_with_enough_data.append(sat)
-# We need at least two images of the same streak for the orbit determination.
-# This code discards satellites for which we have only one image.
-        
 
 """ Determination of direction of satellite trail """
 
-for j in range(0,len(satellites_with_enough_data)): # Selects one group at a time
+# Selects one group at a time
+for j in range(0,len(satellites_with_enough_data)):
+
     images_with_same_streak = [] 
-    for streakyimage in list_of_streaky_images:        
-        if streakyimage.serialno in satellites_with_enough_data[j]:
-            images_with_same_streak.append(streakyimage)
+
     # Creates a list of StreakyImage objects that contain the same streak (i.e.
     # streaks have the same slope).StreakyImage objects are appended in 
     # CONSECUTIVE order, which allows the next block of code to function.
-    
-    if images_with_same_streak[0].streak.x1 == images_with_same_streak[1].streak.x1: # If streak is vertical, x-endpoints are identical (fringe case)
-        if images_with_same_streak[0].streak.y1 > images_with_same_streak[1].streak.y1: # Find direction of trail based on movement of y-endpoint
+    for streakyimage in list_of_streaky_images:        
+        if streakyimage.serialno in satellites_with_enough_data[j]:
+            images_with_same_streak.append(streakyimage)
+
+    # If streak is vertical, x-endpoints are identical (fringe case)
+    if images_with_same_streak[0].streak.x1 == images_with_same_streak[1].streak.x1:
+
+        # Find direction of trail based on movement of y-endpoint
+        if images_with_same_streak[0].streak.y1 > images_with_same_streak[1].streak.y1:
+
             for i in range(0, len(images_with_same_streak)):
+
                 images_with_same_streak[i].streak.endpointa_time = images_with_same_streak[i].streak.endpointb_time
                 images_with_same_streak[i].streak.endpointb_time = images_with_same_streak[i].streak.timestamp
         else:
             pass
-    elif images_with_same_streak[0].streak.x1 > images_with_same_streak[1].streak.x1: # If trail is moving in reverse, consecutive x-endpoints will have smaller values
+    # If trail is moving in reverse, consecutive x-endpoints will have smaller values
+    elif images_with_same_streak[0].streak.x1 > images_with_same_streak[1].streak.x1:
         for i in range(0,len(images_with_same_streak)):
             images_with_same_streak[i].streak.endpointa_time = images_with_same_streak[i].streak.endpointb_time
             images_with_same_streak[i].streak.endpointb_time = images_with_same_streak[i].streak.timestamp
@@ -242,22 +262,29 @@ for j in range(0,len(satellites_with_enough_data)): # Selects one group at a tim
     # times associated with each endpoint.
     
     points_for_one_satellite = []
-    for image in images_with_same_streak:         
+
+    for image in images_with_same_streak:
+        # Creates OrbitalPoints objects and appends to a list of points 
+        # belonging to the same satellite
         point1 = OrbitalPoint(image.filename, image.streak.ra1, image.streak.dec1, image.streak.endpointa_time)
         point2 = OrbitalPoint(image.filename, image.streak.ra2, image.streak.dec2, image.streak.endpointb_time)
         points_for_one_satellite.append(point1)
         points_for_one_satellite.append(point2)
-        # Creates OrbitalPoints objects and appends to a list of points 
-        # belonging to the same satellite
-    list_of_satellites.append(points_for_one_satellite)
+
     # Master list of unidentified satellites
+    list_of_satellites.append(points_for_one_satellite)
+
 
 """ Formatting of data as IOD and saving in txt file """
 count = 0       
 for sat in list_of_satellites:
     count += 1
-    txtname = 'satellite%s.txt' % count
+
     # Gives unidentified satellites consecutively numbered filenames
+    txtname = 'satellite%s.txt' % count
+
+    # Creates a separate txt file for each satellite. Txt file contains the
+    # (ra, dec, time) points for the satellite in IOD format.
     with open(txtpath + txtname, 'a+') as txtFile:
         for point in sat:
             prefix = '99999 99 999999 1234 E ' 
@@ -274,6 +301,5 @@ for sat in list_of_satellites:
             file_line = prefix + datetag + millisecs + timeunc + ra_dec + suffix
             txtFile.write(file_line)
         txtFile.close()
-# Creates a separate txt file for each satellite. Txt file contains the
-# (ra, dec, time) points for the satellite in IOD format.
+
         
