@@ -42,12 +42,20 @@ col2 = int(2500)
 
 # Satellite streak detection parameters
     
-# Canny edge dector
-definitely_not_an_edge = 50 # Below this gradient value, pixel is not an edge
-definitely_an_edge = 100 # Above this gradient value, pixel is definitely an edge
+# Thresholded source extraction: number of sigmas above the background for sources.
+# A rather low significance level seems necessary in this application.
+source_extraction_sigmas = 0.5
 
-# Hough line transform 
-line_votes = 50 # How many votes for something to count as line (e.g. length of line)
+# Size of structuring elements used for morphological opening and closing. These remove
+# noise and join up fragmented streaks.
+opening_kernel_radius = 2
+closing_kernel_radius = 4
+
+# Streak classification: sources with fewer connected pixels than this are discarded
+sizethresh = 100
+
+# Streak classification: sources with aspect ratios less than this are not streaks
+streak_aspect_ratio_min = 10.0
 
 # Parameters for extraction of streak thumbnail image
 
