@@ -70,48 +70,6 @@ def cloudy_or_clear(greyimage):
         return True
     else:
         return False
-    
-def normal_line(x1, y1, x2, y2):
-
-    """
-    Calculates the normal representation of the line from two points.
-    Can handle vertical lines.
-
-    Inputs: two sets of (x,y) pixel coordinates
-    Outputs: orientation (theta [rad]) and distance to origin (d)
-
-    The orientation angle is measured anticlockwise from the x axis
-    and lies in the range [-pi:pi]. The distance to origin is always
-    positive.
-    
-    """
-
-    dx = x2-x1
-    dy = y2-y1
-    n = np.sqrt(dx*dx + dy*dy)
-
-    # Compute the unit normal to the line. At this stage it may point
-    # towards or away from the origin.
-    nx = dy/n
-    ny = -dx/n
-
-    # Compute the distance to the origin
-    d = x1 * nx + y1 * ny
-
-    # If this is negative then flip the direction of the normal
-    if d < 0:
-        nx *= -1
-        ny *= -1
-        d *= -1
-
-    # Absolute value of angle measured from x axis to the normal
-    theta = np.arccos(nx)
-
-    # Correct sign
-    if ny < 0:
-        theta *= -1
-
-    return theta, d
 
 def circular_kernel(radius):
 
@@ -242,6 +200,9 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     # Now threshold the image into source & background.
     source = np.where(greyscale_image < bkg + source_extraction_sigmas*np.sqrt(bkg), 0, 255)
 
+    # XXX Debugging: store raw source image
+    # cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source_raw.png'), source)
+
     # Apply morphological opening to remove noise
     kernel = circular_kernel(opening_kernel_radius)
     source = cv2.morphologyEx(source.astype('uint8'), cv2.MORPH_OPEN, kernel)
@@ -250,7 +211,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     kernel = circular_kernel(closing_kernel_radius)
     source = cv2.morphologyEx(source.astype('uint8'), cv2.MORPH_CLOSE, kernel)
 
-    # Debugging: store source image
+    # XXX Debugging: store processed source image
     # cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source.png'), source)
 
     # Connect pixels to build sources.
@@ -308,7 +269,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streaks_file.close()
         return
 
-    # Debugging: draw lines onto original image
+    # XXX Debugging: draw lines onto original image
     #for x1, y1, x2, y2 in streaks:
     #    cv2.line(rgb, (int(x1),int(y1)), (int(x2),int(y2)), (0,0,255), 2)
     #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_lines.png'),rgb)
@@ -385,6 +346,7 @@ def process_list(filelist, output):
 
     # TODO: don't keep opening and closing the file streams. Keep them open until
     # finished then close them all.
+    # TODO: rationalise this main loop
 
     for file in filelist:
     # The first loop processes all images in a directory and returns a text file
@@ -393,11 +355,11 @@ def process_list(filelist, output):
     # timestamp information used in the next step to calculate orbits.
         print(file)
         
-        streaks = open(output + '/streaks_data.txt','a+')
+        streaks = open(output + 'streaks_data.txt','a+')
         # Creates a .txt document to store data extracted from image processing loop
-        processed_images = open(output + '/processed_images.txt', 'a+')
+        processed_images = open(output + 'processed_images.txt', 'a+')
         # Creates a .txt document to store filenames of images as they are processed
-        processed_images_read = open(output + '/processed_images.txt', 'r')   
+        processed_images_read = open(output + 'processed_images.txt', 'r')   
         # Read-only version of processing record
         already_processed = processed_images_read.read().split()
         

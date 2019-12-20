@@ -48,7 +48,7 @@ source_extraction_sigmas = 0.5
 
 # Size of structuring elements used for morphological opening and closing. These remove
 # noise and join up fragmented streaks.
-opening_kernel_radius = 2
+opening_kernel_radius = 1
 closing_kernel_radius = 4
 
 # Streak classification: sources with fewer connected pixels than this are discarded
