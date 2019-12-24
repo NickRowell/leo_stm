@@ -312,9 +312,9 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
             
         # Image boundaries, clamped to edges of the full image
         x_lo = max(0, centre_xcoordinate - int(width/2))
-        x_hi = min(centre_xcoordinate + int(width/2), len(greyscale_image[1]) - 1)
+        x_hi = min(centre_xcoordinate + int(width/2), len(grey[1]) - 1)
         y_lo = max(0, centre_ycoordinate - int(height/2))
-        y_hi = min(centre_ycoordinate + int(height/2), len(greyscale_image[0]) - 1)
+        y_hi = min(centre_ycoordinate + int(height/2), len(grey[0]) - 1)
 
         # Extract thumbnail image surrounding streak.
         streak_image = grey[y_lo : y_hi, x_lo : x_hi]
