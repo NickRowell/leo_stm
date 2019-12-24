@@ -1,2 +1,2 @@
 # leo_stm
-Code written for a summer project "Space Traffic Control: Monitoring Low Earth Orbit" carried out at the Institute for Astronomy, University of Edinburgh, in 2019.
+Image processing pipeline built for the FireOPAL camera installed at the Royal Observatory of Edinburgh. This collection of scripts performs image processing to detect, extract and calibrate satellite streaks from individual images, and streak processing algorithms to assemble a continuous satellite trail over multiple images. The code is based on work done for a summer project "Space Traffic Control: Monitoring Low Earth Orbit" carried out at the Institute for Astronomy, University of Edinburgh, in 2019.
