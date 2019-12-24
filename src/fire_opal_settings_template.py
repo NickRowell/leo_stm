@@ -56,6 +56,7 @@ sizethresh = 100
 
 # Streak classification: sources with aspect ratios less than this are not streaks
 streak_aspect_ratio_min = 10.0
+streak_width_min = 15.0
 
 # Parameters for extraction of streak thumbnail image
 

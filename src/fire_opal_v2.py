@@ -25,6 +25,10 @@ from scipy.ndimage import gaussian_filter
 from astropy.wcs import WCS
 from astropy.io import fits
 
+# TODO Move these to settings file
+image_width = 7380
+image_height = 4928
+
 def convert_to_grey(rgbimage):
     
     """ This function converts an RGB image to a 
@@ -33,8 +37,33 @@ def convert_to_grey(rgbimage):
     Input: RGB image
     Output: Greyscale image """
 
-    greyimage = np.sum(rgbimage, axis=2)/(3*255.0)
-    return greyimage
+    r = rgbimage[:,:,0]
+    g = rgbimage[:,:,1]
+    b = rgbimage[:,:,2]
+
+    # Apply 3x3 moving average kernel to beat down shot noise
+    kernel = np.ones((3,3),np.float32)/9
+    r = cv2.filter2D(r,-1,kernel)
+    g = cv2.filter2D(g,-1,kernel)
+    b = cv2.filter2D(b,-1,kernel)
+
+    # Measure backgrounds of each image
+    r_bkg = cv2.medianBlur(r, 71)
+    g_bkg = cv2.medianBlur(g, 71)
+    b_bkg = cv2.medianBlur(b, 71)
+
+    # Compute estimate of standard deviation in each pixel
+    var = 1.0 / (1.0/r_bkg + 1.0/g_bkg + 1.0/b_bkg)
+
+    # Compute variance weighted average of background-subtracted image
+    signal = ((r.astype('float64')-r_bkg)/r_bkg + (g.astype('float64')-g_bkg)/g_bkg + (b.astype('float64')-b_bkg)/b_bkg) * var
+
+    # Simple greyscale image for use with astrometry.NET and visualisation
+    grey = np.add(r * 0.1, g * 0.6, b * 0.3)
+    
+    #cv2.imwrite(str(output) + '/detected_streaks/' + 'grey_new.png', grey)
+
+    return signal, var, grey
 
 def cloudy_or_clear(greyimage):
     
@@ -158,15 +187,12 @@ def detect_streak(pixels):
     width = d_max - d_min
     length = e_max - e_min
 
-    # The ratio of length to width determines if this is a streak or not
-    ratio = length / width
-
     # Get the end points, subtracting half the width from
     # each end point to correct for PSF size.
     a = r * n + (e_min + width/2) * t
     b = r * n + (e_max - width/2) * t
 
-    return ratio, a, b
+    return length, width, a, b
 
 def process_image(datadirectory, file, streaks_file, processed_images, output):
 
@@ -176,13 +202,11 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     # Convert to standard RGB pixels [0:255]
     rgb = raw.postprocess()
 
-    # Convert to greyscale pixels [0:1]
-    greyscale_image = convert_to_grey(rgb)
+    # Use green channel to estimate cloudiness
+    is_it_clear = cloudy_or_clear(rgb[:,:,1])
+    is_it_clear = True
 
-    # Returns True if the image is clear and False if cloudy
-    is_it_clear = cloudy_or_clear(greyscale_image)
-    
-    # Skip couldy images
+    # Skip cloudy images
     if is_it_clear != True:
 
         # If image is cloudy, records as 'cloudy'
@@ -191,17 +215,12 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streaks_file.close()
         return
 
-    # Denormalise image
-    greyscale_image *= 255.0
-
-    # Estimate the background image
-    bkg = cv2.medianBlur(greyscale_image.astype('uint8'), 71)
-
-    # Now threshold the image into source & background.
-    source = np.where(greyscale_image < bkg + source_extraction_sigmas*np.sqrt(bkg), 0, 255)
+    # Estimate signal, noise and greyscale image
+    signal, noise, grey = convert_to_grey(rgb)
+    source = np.where(signal < source_extraction_sigmas*np.sqrt(noise), 0, 255)
 
     # XXX Debugging: store raw source image
-    # cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source_raw.png'), source)
+    #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source_raw.png'), source)
 
     # Apply morphological opening to remove noise
     kernel = circular_kernel(opening_kernel_radius)
@@ -212,7 +231,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     source = cv2.morphologyEx(source.astype('uint8'), cv2.MORPH_CLOSE, kernel)
 
     # XXX Debugging: store processed source image
-    # cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source.png'), source)
+    #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source_processed.png'), source)
 
     # Connect pixels to build sources.
     # See https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
@@ -250,9 +269,12 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
                 if labels[y,x] == i:
                	    pixels.append((x,y))
 
-        ratio, a, b = detect_streak(pixels)
+        length, width, a, b = detect_streak(pixels)
 
-        if ratio > streak_aspect_ratio_min:
+        # The ratio of length to width determines if this is a streak or not
+        ratio = length / width
+
+        if ratio > streak_aspect_ratio_min and width > streak_width_min:
             # Found a streak! Get the end points, subtracting half the width from
             # each end point to correct for PSF size.
             streaks.append([a[0], a[1], b[0], b[1]])
@@ -274,7 +296,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     #    cv2.line(rgb, (int(x1),int(y1)), (int(x2),int(y2)), (0,0,255), 2)
     #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_lines.png'),rgb)
 
-    # Process each detected streak separately assuming they are independent
+    # Process each detected streak separately assuming they are different satellites
     for idx, streak in enumerate(streaks):
 
         x1, y1, x2, y2 = streak
@@ -295,7 +317,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         y_hi = min(centre_ycoordinate + int(height/2), len(greyscale_image[0]) - 1)
 
         # Extract thumbnail image surrounding streak.
-        streak_image = greyscale_image[y_lo : y_hi, x_lo : x_hi]
+        streak_image = grey[y_lo : y_hi, x_lo : x_hi]
 
         # Draw streak into thumbnail image
         # cv2.line(streak_image, (int(x1 - x_lo),int(y1 - y_lo)), (int(x2 - x_lo),int(y2 - y_lo)), (0,0,255), 2)
@@ -310,7 +332,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Compose Astrometry.NET command and run it synchronously (wait for results)
         cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
         os.system(cmd)
-        
+
         # Load the WCS & extract the calibration info from the header.
         # Note: Throws a warning that the axes of the WCS file are 0 
         # when the expected number of axes is 2. This can be ignored,
@@ -338,7 +360,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2, time_a, time_b))                    
 
     # Record image as clear_streak, with number of streaks
-    processed_images.write(str(file) + ' clear_streak ' + str() + '\n')
+    processed_images.write(str(file) + ' clear_streak ' + str(len(streaks)) + '\n')
     processed_images.close()
     streaks_file.close()
 
