@@ -377,11 +377,11 @@ def process_list(filelist, output):
     # timestamp information used in the next step to calculate orbits.
         print(file)
         
-        streaks = open(output + '/streaks_data.txt','a+')
+        streaks = open(output + 'streaks_data.txt','a+')
         # Creates a .txt document to store data extracted from image processing loop
-        processed_images = open(output + '/processed_images.txt', 'a+')
+        processed_images = open(output + 'processed_images.txt', 'a+')
         # Creates a .txt document to store filenames of images as they are processed
-        processed_images_read = open(output + '/processed_images.txt', 'r')   
+        processed_images_read = open(output + 'processed_images.txt', 'r')   
         # Read-only version of processing record
         already_processed = processed_images_read.read().split()
         

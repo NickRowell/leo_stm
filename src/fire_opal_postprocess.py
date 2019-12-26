@@ -117,263 +117,261 @@ def normal_line(x1, y1, x2, y2):
 
     return theta, d
 
-############################
-#
-#     Load and map data
-#
-############################
+def streak_processing(output):
 
-# Opens txt file where data from Fire Opal image processing is stored
-data = open(output + 'streaks_data.txt', 'r')
+    ############################
+    #
+    #     Load and map data
+    #
+    ############################
 
-# Loads each line of the file into a list of strings
-lines = data.readlines()
+    # Opens txt file where data from Fire Opal image processing is stored
+    data = open(output + 'streaks_data.txt', 'r')
 
-# Create empty dictionary to map images to lists of streaks. This contains all of the streak activity for the night.
-activity = {}
+    # Loads each line of the file into a list of strings
+    lines = data.readlines()
 
-for line in lines:
+    # Create empty dictionary to map images to lists of streaks. This contains all of the streak activity for the night.
+    activity = {}
 
-    # Strip the \n off the end of the line
-    line = line.rstrip('\n')
+    for line in lines:
 
-    # Parse the Streak from the string of text
-    streak = Streak(line)
+        # Strip the \n off the end of the line
+        line = line.rstrip('\n')
 
-    # Check if we already found a streak in this image
-    if streak.filename not in activity:
-        # Create new entry in dictionary; add this streak as the first
-        activity[streak.filename] = [streak]
-    else:
-        # Multiple streaks in the same image
-        activity[streak.filename].append(streak)
+        # Parse the Streak from the string of text
+        streak = Streak(line)
 
-# TODO: make these global parameters
-angle_match_threshold = 5
-distance_match_threshold = 20
-image_width = 7380
-image_height = 4928
-# Add margin - until streaks cutting image edge are properly handled this is the easiest way.
-margin = 1000
-
-# Build nested list to store satellite trails
-satellites = []
-
-############################
-#
-#       Trail assembly
-#
-############################
-
-# Loop over the images. We only look for matching streaks forwards in time.
-for idx, image in enumerate(sorted(activity)):
-
-    # Loop over the streaks in this image
-    for streak in activity[image]:
-
-        # The set of streaks that have been matched to this one comprise one satellite
-        satellite = [streak]
-
-        # Get the line parameters for this streak
-        theta, r = normal_line(streak.x1, streak.y1, streak.x2, streak.y2)
-
-        # TODO: if the streak cuts the image edge then the path hypotheses will be wrong!
-        # These streaks need special handling.
-
-        # Determine two hypotheses for the position vector as a function of time for this streak
-        x1 = streak.x1
-        y1 = streak.y1
-        x2 = streak.x2
-        y2 = streak.y2
-
-        # datetime.datetime objects
-        ta = streak.time_open
-        tb = streak.time_close
-
-        # Lambda expressions return (x,y) as a function of t for each path hypothesis. For streaks that cut the image edge this will give
-        # a lower bound on the velocity across the image, so is still useful for assessing visibility, i.e. there's no risk that the path
-        # will predict the satellite has moved out of the image when it's still inside it.
-        path1 = lambda t : (x1 + (t - ta).total_seconds() * (x2 - x1) / (tb - ta).total_seconds() , y1 + (t - ta).total_seconds() * (y2 - y1) / (tb - ta).total_seconds())
-        path2 = lambda t : (x1 + (t - tb).total_seconds() * (x2 - x1) / (ta - tb).total_seconds() , y1 + (t - tb).total_seconds() * (y2 - y1) / (ta - tb).total_seconds())
-
-        # Enter the path hypotheses into a list
-        paths = [path1, path2]
-
-        # Check if either find a matching streak in the subsequent images
-        
-        # Loop over subsequent images until there's no more chance of finding a matching streak
-        for image2 in sorted(activity)[idx+1:]:
-
-            # Get shutter open and close time of this image
-            time_open, time_close = get_shutter_open_close_datetimes(image2)
-
-            # If all remaining path hypotheses put the satellite far outside the image then we're done searching
-            satellite_present = False
-            for path in paths:
-                # Check if this path predicts satellite is present in image at the shutter opening time. No need
-                # to check for shutter closing.
-                x_o, y_o = path(time_open)
-                if(x_o > -margin and x_o < image_width+margin and y_o > -margin and y_o < image_height+margin):
-                    # If satellite is moving in this direction then it should be visible at shutter opening
-                    satellite_present = True
-
-            if satellite_present == False:
-                # Break to next streak
-                break
-
-            # Loop over streaks in this image
-            for streak2 in activity[image2]:
-
-                # Check streak (theta, r) line parameters to determine if it's a possible match
-                theta2, r2 = normal_line(streak2.x1, streak2.y1, streak2.x2, streak2.y2)
-
-                if abs(theta - theta2) < angle_match_threshold and abs(r - r2) < distance_match_threshold:
-
-                    # Found a candidate matching streak.
-
-                    # TODO Determine which path hypothesis is correct
-
-                    # TODO Eliminate the incorrect hypothesis from the array, if possible
-
-                    # Enter this streak into the list of matching streaks
-                    satellite.append(streak2)
-
-                    # Remember to eliminate the streak from the map so that we don't process it later on
-                    activity[image2].remove(streak2)
-
-        satellites.append(satellite)
+        # Check if we already found a streak in this image
+        if streak.filename not in activity:
+            # Create new entry in dictionary; add this streak as the first
+            activity[streak.filename] = [streak]
+        else:
+            # Multiple streaks in the same image
+            activity[streak.filename].append(streak)
 
 
-############################
-#
-#       Write outputs
-#
-############################
+    # Build nested list to store satellite trails
+    satellites = []
 
-print('Found ' + str(len(satellites)) + ' satellites')
+    ############################
+    #
+    #       Trail assembly
+    #
+    ############################
 
-# XXX Debugging
-#for satellite in satellites:
-#    print('Streaks = ' + str(len(satellite)))
-#    for streak in satellite:
-#        print(streak.filename + ' ' + str(streak.x1) + ' ' + str(streak.y1))
+    # Loop over the images. We only look for matching streaks forwards in time.
+    for idx, image in enumerate(sorted(activity)):
 
-# Post-process satellites to resolve direction and assign times to the streak end points.
-# TODO can the resolving of end point times be done during trail assembly?
+        # Loop over the streaks in this image
+        for streak in activity[image]:
 
-# Create output file
-# TODO: add date
-resultsFile = output + 'satellites.txt'
-with open(resultsFile, 'a+') as txtFile:
-    for idx, streaks in enumerate(satellites):
+            # The set of streaks that have been matched to this one comprise one satellite
+            satellite = [streak]
 
-        # If there's two or more streaks then we can resolve direction
-        if len(streaks) > 1:
-            # Use the first two streaks to determine the direction
-            streak1 = streaks[0]
-            streak2 = streaks[1]
+            # Get the line parameters for this streak
+            theta, r = normal_line(streak.x1, streak.y1, streak.x2, streak.y2)
 
-            x1 = streak1.x1
-            y1 = streak1.y1
-            x2 = streak1.x2
-            y2 = streak1.y2
+            # TODO: if the streak cuts the image edge then the path hypotheses will be wrong!
+            # These streaks need special handling.
+
+            # Determine two hypotheses for the position vector as a function of time for this streak
+            x1 = streak.x1
+            y1 = streak.y1
+            x2 = streak.x2
+            y2 = streak.y2
 
             # datetime.datetime objects
-            to = streak1.time_open
-            tc = streak1.time_close
+            ta = streak.time_open
+            tb = streak.time_close
 
-            # Lambda expressions return (x,y) as a function of t for each path hypothesis
+            # Lambda expressions return (x,y) as a function of t for each path hypothesis. For streaks that cut the image edge this will give
+            # a lower bound on the velocity across the image, so is still useful for assessing visibility, i.e. there's no risk that the path
+            # will predict the satellite has moved out of the image when it's still inside it.
+            path1 = lambda t : (x1 + (t - ta).total_seconds() * (x2 - x1) / (tb - ta).total_seconds() , y1 + (t - ta).total_seconds() * (y2 - y1) / (tb - ta).total_seconds())
+            path2 = lambda t : (x1 + (t - tb).total_seconds() * (x2 - x1) / (ta - tb).total_seconds() , y1 + (t - tb).total_seconds() * (y2 - y1) / (ta - tb).total_seconds())
 
-            # Path1 assumes (x1,y1) occurs at shutter opening and (x2,y2) at shutter closing.
-            path1 = lambda t : (x1 + (t - to).total_seconds() * (x2 - x1) / (tc - to).total_seconds() , y1 + (t - to).total_seconds() * (y2 - y1) / (tc - to).total_seconds())
+            # Enter the path hypotheses into a list
+            paths = [path1, path2]
 
-            # Path2 assumes (x2,y2) occurs at shutter opening and (x1,y1) at shutter closing.
-            path2 = lambda t : (x1 + (t - tc).total_seconds() * (x2 - x1) / (to - tc).total_seconds() , y1 + (t - tc).total_seconds() * (y2 - y1) / (to - tc).total_seconds())
+            # Check if either find a matching streak in the subsequent images
+        
+            # Loop over subsequent images until there's no more chance of finding a matching streak
+            for image2 in sorted(activity)[idx+1:]:
 
-            # Observed midpoint of streak2
-            xm = (streak2.x1 + streak2.x2)/2
-            ym = (streak2.y1 + streak2.y2)/2
+                # Get shutter open and close time of this image
+                time_open, time_close = get_shutter_open_close_datetimes(image2)
 
-            # Use both hypotheses to predict the location of the midpoint of the second streak
-            dt = (streak2.time_close - streak2.time_open) / 2
-            t_mid = streak2.time_open + dt
+                # If all remaining path hypotheses put the satellite far outside the image then we're done searching
+                satellite_present = False
+                for path in paths:
+                    # Check if this path predicts satellite is present in image at the shutter opening time. No need
+                    # to check for shutter closing.
+                    x_o, y_o = path(time_open)
+                    if(x_o > -margin and x_o < image_width+margin and y_o > -margin and y_o < image_height+margin):
+                        # If satellite is moving in this direction then it should be visible at shutter opening
+                        satellite_present = True
 
-            xm_p1, ym_p1 = path1(t_mid)
-            xm_p2, ym_p2 = path2(t_mid)
+                if satellite_present == False:
+                    # Break to next streak
+                    break
 
-            # Differences between predicted & observed midpoints
-            offset_xp1 = xm_p1 - xm
-            offset_yp1 = ym_p1 - ym
-            offset_p1 = np.sqrt(offset_xp1*offset_xp1 + offset_yp1*offset_yp1)
+                # Loop over streaks in this image
+                for streak2 in activity[image2]:
 
-            offset_xp2 = xm_p2 - xm
-            offset_yp2 = ym_p2 - ym
-            offset_p2 = np.sqrt(offset_xp2*offset_xp2 + offset_yp2*offset_yp2)
+                    # Check streak (theta, r) line parameters to determine if it's a possible match
+                    theta2, r2 = normal_line(streak2.x1, streak2.y1, streak2.x2, streak2.y2)
 
-            # XXX Debugging
-            #print('streak1: x1 y1 = ' + str(x1) + ' ' + str(y1))
-            #print('streak1: x2 y2 = ' + str(x2) + ' ' + str(y2))
-            #print('streak2: x1 y1 = ' + str(streak2.x1) + ' ' + str(streak2.y1))
-            #print('streak2: x2 y2 = ' + str(streak2.x2) + ' ' + str(streak2.y2))
-            #print('streak2: xm ym = ' + str(xm) + ' ' + str(ym))
-            #print('offset_p1 = ' + str(offset_p1))
-            #print('offset_p2 = ' + str(offset_p2))
+                    if abs(theta - theta2) < angle_match_threshold and abs(r - r2) < distance_match_threshold:
 
-            # Smallest error indicates the correct path. Resolve the ends of streak1 so that (x1,y1) occurs
-            # at shutter opening and (x2,y2) at shutter closing.
-            if offset_p1 < offset_p2:
-                # Path1 is correct. (x1,y1) occurs at shutter opening and (x2,y2) at shutter closing.
-                # No action to take
-                pass
-            else:
-                # Path 2 is correct. (x2,y2) occurs at shutter opening and (x1,y1) at shutter closing.
-                # Need to swap the order of the points.
-                streak1.swap_ends()
+                        # Found a candidate matching streak.
 
-            # Now loop over streak 2+ and resolve order of ends
-            for streak in streaks[1:]:
-                # The point on this streak with the shortest distance to the end of the first streak is the streak start. Other point is the streak end
-                d1 = np.sqrt((streak.x1 - streak1.x2)*(streak.x1 - streak1.x2) + (streak.y1 - streak1.y2)*(streak.y1 - streak1.y2))
-                d2 = np.sqrt((streak.x2 - streak1.x2)*(streak.x2 - streak1.x2) + (streak.y2 - streak1.y2)*(streak.y2 - streak1.y2))
-                if d1 < d2:
-                    # Point 1 occurs at shutter opening; no need to swap
+                        # TODO Determine which path hypothesis is correct
+
+                        # TODO Eliminate the incorrect hypothesis from the array, if possible
+
+                        # Enter this streak into the list of matching streaks
+                        satellite.append(streak2)
+
+                        # Remember to eliminate the streak from the map so that we don't process it later on
+                        activity[image2].remove(streak2)
+
+            satellites.append(satellite)
+
+    ############################
+    #
+    #       Write outputs
+    #
+    ############################
+
+    print('Found ' + str(len(satellites)) + ' satellites')
+
+    # XXX Debugging
+    #for satellite in satellites:
+    #    print('Streaks = ' + str(len(satellite)))
+    #    for streak in satellite:
+    #        print(streak.filename + ' ' + str(streak.x1) + ' ' + str(streak.y1))
+
+    # Post-process satellites to resolve direction and assign times to the streak end points.
+    # TODO can the resolving of end point times be done during trail assembly?
+
+    # Create output file
+    # TODO: add date
+    resultsFile = output + 'satellites.txt'
+    with open(resultsFile, 'a+') as txtFile:
+        for idx, streaks in enumerate(satellites):
+
+            # If there's two or more streaks then we can resolve direction
+            if len(streaks) > 1:
+                # Use the first two streaks to determine the direction
+                streak1 = streaks[0]
+                streak2 = streaks[1]
+
+                x1 = streak1.x1
+                y1 = streak1.y1
+                x2 = streak1.x2
+                y2 = streak1.y2
+
+                # datetime.datetime objects
+                to = streak1.time_open
+                tc = streak1.time_close
+
+                # Lambda expressions return (x,y) as a function of t for each path hypothesis
+
+                # Path1 assumes (x1,y1) occurs at shutter opening and (x2,y2) at shutter closing.
+                path1 = lambda t : (x1 + (t - to).total_seconds() * (x2 - x1) / (tc - to).total_seconds() , y1 + (t - to).total_seconds() * (y2 - y1) / (tc - to).total_seconds())
+
+                # Path2 assumes (x2,y2) occurs at shutter opening and (x1,y1) at shutter closing.
+                path2 = lambda t : (x1 + (t - tc).total_seconds() * (x2 - x1) / (to - tc).total_seconds() , y1 + (t - tc).total_seconds() * (y2 - y1) / (to - tc).total_seconds())
+
+                # Observed midpoint of streak2
+                xm = (streak2.x1 + streak2.x2)/2
+                ym = (streak2.y1 + streak2.y2)/2
+
+                # Use both hypotheses to predict the location of the midpoint of the second streak
+                dt = (streak2.time_close - streak2.time_open) / 2
+                t_mid = streak2.time_open + dt
+
+                xm_p1, ym_p1 = path1(t_mid)
+                xm_p2, ym_p2 = path2(t_mid)
+
+                # Differences between predicted & observed midpoints
+                offset_xp1 = xm_p1 - xm
+                offset_yp1 = ym_p1 - ym
+                offset_p1 = np.sqrt(offset_xp1*offset_xp1 + offset_yp1*offset_yp1)
+
+                offset_xp2 = xm_p2 - xm
+                offset_yp2 = ym_p2 - ym
+                offset_p2 = np.sqrt(offset_xp2*offset_xp2 + offset_yp2*offset_yp2)
+
+                # XXX Debugging
+                #print('streak1: x1 y1 = ' + str(x1) + ' ' + str(y1))
+                #print('streak1: x2 y2 = ' + str(x2) + ' ' + str(y2))
+                #print('streak2: x1 y1 = ' + str(streak2.x1) + ' ' + str(streak2.y1))
+                #print('streak2: x2 y2 = ' + str(streak2.x2) + ' ' + str(streak2.y2))
+                #print('streak2: xm ym = ' + str(xm) + ' ' + str(ym))
+                #print('offset_p1 = ' + str(offset_p1))
+                #print('offset_p2 = ' + str(offset_p2))
+
+                # Smallest error indicates the correct path. Resolve the ends of streak1 so that (x1,y1) occurs
+                # at shutter opening and (x2,y2) at shutter closing.
+                if offset_p1 < offset_p2:
+                    # Path1 is correct. (x1,y1) occurs at shutter opening and (x2,y2) at shutter closing.
+                    # No action to take
                     pass
                 else:
-                    # Point 2 occurs at shutter opening; need to swap
-                    streak.swap_ends()
+                    # Path 2 is correct. (x2,y2) occurs at shutter opening and (x1,y1) at shutter closing.
+                    # Need to swap the order of the points.
+                    streak1.swap_ends()
 
-            # Now loop over all streaks and write them out
-            for streak in streaks:
-                txtFile.write(streak.to_string())
-            txtFile.write('\n')
+                # Now loop over streak 2+ and resolve order of ends
+                for streak in streaks[1:]:
+                    # The point on this streak with the shortest distance to the end of the first streak is the streak start. Other point is the streak end
+                    d1 = np.sqrt((streak.x1 - streak1.x2)*(streak.x1 - streak1.x2) + (streak.y1 - streak1.y2)*(streak.y1 - streak1.y2))
+                    d2 = np.sqrt((streak.x2 - streak1.x2)*(streak.x2 - streak1.x2) + (streak.y2 - streak1.y2)*(streak.y2 - streak1.y2))
+                    if d1 < d2:
+                        # Point 1 occurs at shutter opening; no need to swap
+                        pass
+                    else:
+                        # Point 2 occurs at shutter opening; need to swap
+                        streak.swap_ends()
 
-        # If there's just one streak then all we can provide the coordinates of the end points and the shutter open/close times
-        else:
-            txtFile.write(streaks[0].to_string())
-            txtFile.write('\n')
+                # Now loop over all streaks and write them out
+                for streak in streaks:
+                    txtFile.write(streak.to_string())
+                txtFile.write('\n')
 
-txtFile.close()
+            # If there's just one streak then all we can provide the coordinates of the end points and the shutter open/close times
+            else:
+                txtFile.write(streaks[0].to_string())
+                txtFile.write('\n')
 
-# TODO: create some visualisation of the detected satellites
+    txtFile.close()
 
-# TODO: email to addresses given in the settings
+    # TODO: create some visualisation of the detected satellites
 
-msg = MIMEMultipart()
-msg['Subject'] = 'FireOPAL results '
-msg['From']    = 'nr@roe.ac.uk'
-msg['To']      = 'nr@roe.ac.uk'
-msg['Date']    = formatdate(localtime=True)
+    # TODO: email to addresses given in the settings
 
-# TODO Insert correct date
-msg.attach(MIMEText('This email contains the results of the ROE FireOPAL pipeline for the night starting on XXXXX'))
+    msg = MIMEMultipart()
+    msg['Subject'] = 'FireOPAL results '
+    msg['From']    = 'nr@roe.ac.uk'
+    msg['To']      = 'nr@roe.ac.uk'
+    msg['Date']    = formatdate(localtime=True)
 
-# Attach the satellites.xt file
-with open(resultsFile, "rb") as fil:
-    part = MIMEApplication(fil.read(),Name=basename(resultsFile))
-part['Content-Disposition'] = 'attachment; filename="%s"' % basename(resultsFile)
-msg.attach(part)
+    # TODO Insert correct date
+    msg.attach(MIMEText('This email contains the results of the ROE FireOPAL pipeline for the night starting on XXXXX'))
 
-s = smtplib.SMTP('mail.roe.ac.uk', 25)
-s.send_message(msg)
-s.quit()
+    # Attach the satellites.xt file
+    with open(resultsFile, "rb") as fil:
+        part = MIMEApplication(fil.read(),Name=basename(resultsFile))
+    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(resultsFile)
+    msg.attach(part)
+
+    s = smtplib.SMTP('mail.roe.ac.uk', 25)
+    s.send_message(msg)
+    s.quit()
+
+if __name__ == "__main__":
+    streak_processing(output)
+
 

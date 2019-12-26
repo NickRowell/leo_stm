@@ -67,12 +67,18 @@ thumbnail_min_diameter = 1000
 # Margin added to the image to ensure the ends of the streak are always at least this far from the image edge [pix].
 thumbnail_streak_margin = 100
 
-# Trail assembly and orbit determination parameters
+# Streak processing & trail assembly parameters
 
-floor_scale = 100
-# The slope is multiplied by this factor. The floor function used in grouping
-# rounds to the nearest integer. Since slopes in test data can have values
-# such as 0.4578, 1.872, etc., rounding to whole integers isn't useful. 
-# Multiply by floor_scale to get 45.78 and 187.2 - now integer rounding works!
-# Effectively you are rounding to the 2nd decimal place. To round to the 3rd
-# decimal place, change floor_scale to 1000.
+# Angle threshold for identifying matching streaks [degrees]
+angle_match_threshold = 5
+
+# Distance threshold for identifying matching streaks [pixels]
+distance_match_threshold = 20
+
+# Image dimensions; can these be worked out programmatically?
+image_width = 7380
+image_height = 4928
+
+# Margin applied to image boundary when assessing predicted satellite visibility. This is a simple way to deal with streaks
+# that are cut short by the image boundary and for which the prediction is compromised.
+margin = 1000

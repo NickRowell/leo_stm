@@ -1,6 +1,7 @@
 import os, sys, time
 from fire_opal_settings import *
 from fire_opal_v2 import process_list
+from fire_opal_postprocess import streak_processing
 
 # is this running as part of a parallel process
 if 'SLURM_ARRAY_TASK_COUNT' in os.environ:
@@ -28,13 +29,13 @@ except:
     sys.exit()
 
 # set up directory for output products
-output           = output + '/' + date
+output           = output + '/' + date + '/'
 
 # will be exception 'FileExistsError' if already exists
 if task_id == task_min:
     os.mkdir(output)
-    os.mkdir(output + '/detected_streaks')
-    os.mkdir(output + '/wcs')
+    os.mkdir(output + 'detected_streaks')
+    os.mkdir(output + 'wcs')
 else:
     # wait a bit, make sure the directory has been created
     time.sleep(10)
@@ -46,3 +47,9 @@ print('processor %d of %d has %d files' % (task_id-task_min, task_count, len(myf
 # and off we go
 process_list(myfilelist, output)
 
+# Launch streak processing from first task
+if task_id == task_min:
+    # Wait ten mins to allow other tasks in the array to finish
+    # TODO Do this better by using slurm --wait.
+    time.sleep(600)
+    streak_processing(output)
