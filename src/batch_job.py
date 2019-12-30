@@ -1,7 +1,7 @@
 import os, sys, time
-from fire_opal_settings import *
-from fire_opal_v2 import process_list
-from fire_opal_postprocess import streak_processing
+from fireopal_settings import *
+from fireopal_image_processing import process_list
+from fireopal_streak_processing import streak_processing
 
 # is this running as part of a parallel process
 if 'SLURM_ARRAY_TASK_COUNT' in os.environ:
