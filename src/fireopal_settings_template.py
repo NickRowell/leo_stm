@@ -84,6 +84,9 @@ thumbnail_streak_margin = 100
 #                                       #
 #########################################
 
+# Comma-separated list of email addresses that results are to be sent to
+email_addresses=''
+
 # Angle threshold for identifying matching streaks [degrees]
 angle_match_threshold = 5
 

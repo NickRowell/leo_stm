@@ -347,7 +347,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         time_b = (time + datetime.timedelta(seconds=5)).time()
             
         # Write details of streak to the file
-        streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2, time_a, time_b))                    
+        streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2))
 
     # Record image as clear_streak, with number of streaks
     processed_images.write(str(file) + ' clear_streak ' + str(len(streaks)) + '\n')

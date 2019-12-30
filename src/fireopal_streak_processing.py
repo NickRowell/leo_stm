@@ -27,14 +27,11 @@ class Streak:
     At first, the correspondence between the streak ends and the times is not known.
     Once the streak direction has been resolved, the coordinates with subscript 1
     correspond to the shutter opening, i.e. streak start.
-    
     """
     def __init__(self, line):
         columns = line.split(',') 
 
-        # TODO no longer use time_a and time_b recorded in the streak. These are worked out on the fly from the filename.
-
-        # file, ra1, dec1, x1, y1, ra2, dec2, x2, y2, time_a, time_b
+        # file, ra1, dec1, x1, y1, ra2, dec2, x2, y2
         self.filename = columns[0]
         self.ra1 = float(columns[1])
         self.dec1 = float(columns[2])
@@ -85,7 +82,6 @@ def normal_line(x1, y1, x2, y2):
     The orientation angle is measured anticlockwise from the x axis
     and lies in the range [-180:180]. The distance to origin is always
     positive.
-    
     """
 
     dx = x2-x1
@@ -118,7 +114,7 @@ def normal_line(x1, y1, x2, y2):
 
     return theta, d
 
-def streak_processing(output):
+def streak_processing(output, date_str):
 
     ############################
     #
@@ -150,7 +146,6 @@ def streak_processing(output):
         else:
             # Multiple streaks in the same image
             activity[streak.filename].append(streak)
-
 
     # Build nested list to store satellite trails
     satellites = []
@@ -257,8 +252,7 @@ def streak_processing(output):
     # TODO can the resolving of end point times be done during trail assembly?
 
     # Create output file
-    # TODO: add date
-    resultsFile = output + 'satellites.txt'
+    resultsFile = output + 'satellites_'+date_str+'.txt'
     with open(resultsFile, 'a+') as txtFile:
         for idx, streaks in enumerate(satellites):
 
@@ -351,16 +345,13 @@ def streak_processing(output):
 
     # TODO: create some visualisation of the detected satellites
 
-    # TODO: email to addresses given in the settings
-
     msg = MIMEMultipart()
-    msg['Subject'] = 'FireOPAL results '
+    msg['Subject'] = 'ROE FireOPAL results ' + date_str
     msg['From']    = 'nr@roe.ac.uk'
-    msg['To']      = 'nr@roe.ac.uk'
+    msg['To']      = email_addresses
     msg['Date']    = formatdate(localtime=True)
 
-    # TODO Insert correct date
-    msg.attach(MIMEText('This email contains the results of the ROE FireOPAL pipeline for the night starting on XXXXX'))
+    msg.attach(MIMEText('This email contains the results of the ROE FireOPAL pipeline for the night starting on ' + date_str))
 
     # Attach the satellites.xt file
     with open(resultsFile, "rb") as fil:
@@ -369,10 +360,9 @@ def streak_processing(output):
     msg.attach(part)
 
     s = smtplib.SMTP('mail.roe.ac.uk', 25)
-    #s.send_message(msg)
+    s.send_message(msg)
     s.quit()
 
 if __name__ == "__main__":
-    streak_processing(output)
-
+    streak_processing(output, '2019-12-28')
 
