@@ -60,7 +60,8 @@ class Streak:
         self.dec1, self.dec2 = self.dec2, self.dec1
 
     def to_string(self):
-        return str(self.ra1) + ',' + str(self.dec1) + ',' + str(self.time_open) + ',' + str(self.ra2) + ',' + str(self.dec2) + ',' + str(self.time_close) + ','
+
+        return '{:.3f},{:.3f},{},{:.3f},{:.3f},{},'.format(self.ra1, self.dec1, self.time_open, self.ra2, self.dec2, self.time_close)
 
 def get_shutter_open_close_datetimes(filename):
 
@@ -368,7 +369,7 @@ def streak_processing(output):
     msg.attach(part)
 
     s = smtplib.SMTP('mail.roe.ac.uk', 25)
-    s.send_message(msg)
+    #s.send_message(msg)
     s.quit()
 
 if __name__ == "__main__":

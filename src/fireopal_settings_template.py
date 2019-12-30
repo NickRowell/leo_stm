@@ -1,16 +1,27 @@
-# Algorithmic and configuration parameters for the FireOPAL scripts.
+#########################################
+#                                       #
+#          General parameters           #
+#                                       #
+#########################################
 
-# Text file produced by fire_opal_postprocess.py
-txtpath = ''
-
-# Location for all outputs of fire_opal_v2.py
+# Location for all outputs
 output = ''
-
-# Input directory of *.NEF images for fire_opal_v2.py
-datadirectory = ''
 
 # Path to the python executable
 pythonpath = ''
+
+# Image dimensions; can these be worked out programmatically?
+image_width = 7380
+image_height = 4928
+
+#########################################
+#                                       #
+#      Image processing parameters      #
+#                                       #
+#########################################
+
+# Input directory of *.NEF images
+datadirectory = ''
 
 # Location of the Astrometry.NET client
 clientpath = '../nova_client.py'
@@ -18,7 +29,6 @@ clientpath = '../nova_client.py'
 # An API key is needed to access astrometry.net. The API key is linked
 # to a specific user account.
 apikey = ''
-
 
 # Cloudy/clear image detection parameters
 
@@ -39,6 +49,7 @@ row1 = int(2000)
 row2 = int(2500)
 col1 = int(2000)
 col2 = int(2500)
+
 
 # Satellite streak detection parameters
     
@@ -67,17 +78,17 @@ thumbnail_min_diameter = 1000
 # Margin added to the image to ensure the ends of the streak are always at least this far from the image edge [pix].
 thumbnail_streak_margin = 100
 
-# Streak processing & trail assembly parameters
+#########################################
+#                                       #
+#     Streak processing parameters      #
+#                                       #
+#########################################
 
 # Angle threshold for identifying matching streaks [degrees]
 angle_match_threshold = 5
 
 # Distance threshold for identifying matching streaks [pixels]
 distance_match_threshold = 20
-
-# Image dimensions; can these be worked out programmatically?
-image_width = 7380
-image_height = 4928
 
 # Margin applied to image boundary when assessing predicted satellite visibility. This is a simple way to deal with streaks
 # that are cut short by the image boundary and for which the prediction is compromised.
