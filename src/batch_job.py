@@ -52,4 +52,4 @@ if task_id == task_min:
     # Wait ten mins to allow other tasks in the array to finish
     # TODO Do this better by using slurm --wait.
     time.sleep(600)
-    streak_processing(output)
+    streak_processing(output, date)
