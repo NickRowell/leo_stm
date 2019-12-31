@@ -192,7 +192,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     rgb = raw.postprocess()
 
     # Use green channel to estimate cloudiness
-    is_it_clear = cloudy_or_clear(rgb[:,:,1])
+    #is_it_clear = cloudy_or_clear(rgb[:,:,1])
     # TODO re-enable this when new algorithm is in place. Write out statistics on cloud level for analysis.
     is_it_clear = True
 
@@ -207,6 +207,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
     # Estimate signal, noise and greyscale image
     signal, noise, grey = convert_to_grey(rgb)
+
     source = np.where(signal < source_extraction_sigmas*np.sqrt(noise), 0, 255)
 
     # XXX Debugging: store raw source image
@@ -225,8 +226,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
     # Connect pixels to build sources.
     # See https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
-    connectivity = 4
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(source.astype('uint8'), connectivity)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(source, connectivity=8)
 
     # Debugging: render extracted sources
     #print('Found ' + str(num_labels) + ' sources')
