@@ -272,7 +272,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     # Convert streaks list to array
     streaks = np.asarray(streaks)
 
-    print('Found ' + str(streaks.shape[0]) + ' streaks')
+    print('Found ' + str(len(streaks)) + ' streaks')
 
     if len(streaks) == 0:
         # Image is clear but no streaks found
@@ -321,7 +321,13 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
         # Compose Astrometry.NET command and run it synchronously (wait for results)
         cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
-        os.system(cmd)
+        returned_value = os.system(cmd)
+
+        print('returned_value = ' + str(returned_value))
+
+        # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
+        if not os.path.exists(wcsfile):
+            continue
 
         # Load the WCS & extract the calibration info from the header.
         # Note: Throws a warning that the axes of the WCS file are 0 
