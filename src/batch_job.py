@@ -52,4 +52,12 @@ if task_id == task_min:
     # Wait ten mins to allow other tasks in the array to finish
     # TODO Do this better by using slurm --wait.
     time.sleep(600)
+
+    # TODO post-process the streaks file to purge NULL characters which seem to get written
+    # due to thread contention. The file writing could be done better to avoid this.
+
+    # tr < file.txt -d '\000' > tmp && mv tmp file.txt
+    cmd =  'tr < %sstreaks_data.txt -d \'\\000\' > %stmp.txt && mv %stmp.txt %sstreaks_data.txt' % (output, output, output, output)
+    returned_value = os.system(cmd)
+
     streak_processing(output, date)
