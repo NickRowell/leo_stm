@@ -9,8 +9,8 @@ from astropy.wcs import WCS
 from astropy.io import fits
 
 def convert_to_grey(rgbimage):
-    
-    """ This function converts an RGB image to a 
+
+    """ This function converts an RGB image to a
     background-subtracted greyscale image representing the
     signal from celestial sources (stars, satellites), an image
     quantifying the variance of each pixel in the first image, and
@@ -47,22 +47,22 @@ def convert_to_grey(rgbimage):
 
     # Simple greyscale image for use with astrometry.NET and visualisation
     grey = np.add(r * 0.1, g * 0.6, b * 0.3)
-    
+
     #cv2.imwrite(str(output) + '/detected_streaks/' + 'grey_new.png', grey)
 
     return signal, var, grey
 
 # TODO: improve cloud detection
 def cloudy_or_clear(greyimage):
-    
-    """ 
+
+    """
     This function sorts greyscale images of the night sky into two
     categories: clear or cloudy. Returns Boolean True or False.
-    
+
     Inputs: Greyscale image, upper intensity bound of background, lower
     intensity bound for stars, Gaussian filter sigma.
-    Output: True if clear, False if cloudy 
-    
+    Output: True if clear, False if cloudy
+
     """
 
     # Make a defocused copy of original image and subtract from original
@@ -112,7 +112,6 @@ def detect_streak(pixels):
     Inputs: array of (x,y) pixel coordinates
     Outputs: ratio of the length to width of the source, and the (x,y) coordinates of the points
              at each end of the source along it's longest axis, allowing a margin for the PSF size.
-    
     """
 
     # pixels is a 'size' x 2 array containing the pixel coordinates of the source pixels.
@@ -281,6 +280,13 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streaks_file.close()
         return
 
+    # Create symlink to original NEF image, so we can preserve these
+    dest = str(output) + 'streak_images/' + file
+    src = str(datadirectory) + file
+    print('symlinking ' + str(dest) + ' -> ' + str(src))
+    os.symlink(src, dest)
+
+
     # XXX Debugging: draw lines onto original image
     #for x1, y1, x2, y2 in streaks:
     #    cv2.line(rgb, (int(x1),int(y1)), (int(x2),int(y2)), (0,0,255), 2)
@@ -299,7 +305,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Image width & height, including margin if necessary
         width = int(max(thumbnail_min_diameter, 2*thumbnail_streak_margin + np.abs(x1-x2)))
         height = int(max(thumbnail_min_diameter, 2*thumbnail_streak_margin + np.abs(y1-y2)))
-            
+
         # Image boundaries, clamped to edges of the full image
         x_lo = max(0, centre_xcoordinate - int(width/2))
         x_hi = min(centre_xcoordinate + int(width/2), len(grey[1]) - 1)
@@ -311,7 +317,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
         # Draw streak into thumbnail image
         # cv2.line(streak_image, (int(x1 - x_lo),int(y1 - y_lo)), (int(x2 - x_lo),int(y2 - y_lo)), (0,0,255), 2)
-            	
+
         # Save thumbnail to disk
         streak_filepath = str(output) + '/detected_streaks/' + file.replace('.NEF', '_streak_' + str(idx+1) + '.png')
         cv2.imwrite(streak_filepath, streak_image)
@@ -330,12 +336,12 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
             continue
 
         # Load the WCS & extract the calibration info from the header.
-        # Note: Throws a warning that the axes of the WCS file are 0 
+        # Note: Throws a warning that the axes of the WCS file are 0
         # when the expected number of axes is 2. This can be ignored,
         # the program will continue running.
         hdu = fits.open(wcsfile)
         w = WCS(hdu[0].header)
-            
+
         # Transform pixel coordinates of streak end points to celestial coordinates.
         # Remember to translate streak coordinates to thumbnail image frame.
         ra1, dec1 = w.wcs_pix2world(x1 - x_lo, y1 - y_lo, 0, ra_dec_order=True)
@@ -351,7 +357,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # TODO: Make exposure time a global parameter
         time_a = time.time()
         time_b = (time + datetime.timedelta(seconds=5)).time()
-            
+
         # Write details of streak to the file
         streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2))
 
@@ -372,26 +378,26 @@ def process_list(filelist, output):
     # an image containing a satellite streak, together with coordinate and
     # timestamp information used in the next step to calculate orbits.
         print(file)
-        
+
         streaks = open(output + 'streaks_data.txt','a+')
         # Creates a .txt document to store data extracted from image processing loop
         processed_images = open(output + 'processed_images.txt', 'a+')
         # Creates a .txt document to store filenames of images as they are processed
-        processed_images_read = open(output + 'processed_images.txt', 'r')   
+        processed_images_read = open(output + 'processed_images.txt', 'r')
         # Read-only version of processing record
         already_processed = processed_images_read.read().split()
-        
-        if file in already_processed:   
+
+        if file in already_processed:
             processed_images.close()
             processed_images_read.close()
             streaks.close()
             print('    already processed')
             continue
             # Skips already processed files and continues to next iteration
-            
-        else: 
+
+        else:
             process_image(datadirectory, file, streaks, processed_images, output)
-            
-if __name__ == "__main__":                
+
+if __name__ == "__main__":
     filelist = os.listdir(datadirectory)
     process_list(filelist, output)
