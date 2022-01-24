@@ -282,7 +282,9 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
     # Create symlink to original NEF image, so we can preserve these
     dest = str(output) + 'streak_images/' + file
-    src = str(datadirectory) + file
+    srcL = str(datadirectory) + file
+    # Eliminate symlinks from input file path
+    src = os.path.realpath(srcL)
     print('symlinking ' + str(dest) + ' -> ' + str(src))
     os.symlink(src, dest)
 
