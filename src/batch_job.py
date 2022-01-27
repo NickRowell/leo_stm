@@ -1,4 +1,5 @@
 import os, sys, time
+from pathlib import Path
 from fireopal_settings import *
 from fireopal_image_processing import process_list
 from fireopal_streak_processing import streak_processing
@@ -13,8 +14,12 @@ else:
     task_min   = 0
     task_id    = 0
 
-# list of files to be processed
+# List of files in the datadirectory
 filelist = os.listdir(datadirectory)
+
+# Remove files that are not NEF images
+filelist = [f for f in filelist if f.endswith('.NEF')]
+
 if len(filelist) == 0:
     print('No files found %s', datadirectory)
 
@@ -37,6 +42,15 @@ if task_id == task_min:
     os.mkdir(output + 'detected_streaks')
     os.mkdir(output + 'streak_images')
     os.mkdir(output + 'wcs')
+
+    # Create symlink to latest processing results, in parent folder of the datadirectory
+    datapath = Path(datadirectory)
+    datapathparent = datapath.parent.absolute()
+    procres = str(datapathparent) + '/processed'
+    # Can't overwrite an existing symlink; must create temporary link then rename it
+    procres_TMP = str(datapathparent) + '/processed_TMP'
+    os.symlink(output, procres_TMP)
+    os.rename(procres_TMP, procres)
 else:
     # wait a bit, make sure the directory has been created
     time.sleep(10)
