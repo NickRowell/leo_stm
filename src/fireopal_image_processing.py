@@ -7,6 +7,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from astropy.wcs import WCS
 from astropy.io import fits
+import fcntl
 
 def convert_to_grey(rgbimage):
 
@@ -275,7 +276,9 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
     if len(streaks) == 0:
         # Image is clear but no streaks found
+        fcntl.flock(processed_images, fcntl.LOCK_EX)
         processed_images.write(str(file) + ' clear_streakless' + '\n')
+        fcntl.flock(processed_images, fcntl.LOCK_UN)
         processed_images.close()
         streaks_file.close()
         return
@@ -361,10 +364,14 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         time_b = (time + datetime.timedelta(seconds=5)).time()
 
         # Write details of streak to the file
+        fcntl.flock(streaks_file, fcntl.LOCK_EX)
         streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2))
+        fcntl.flock(streaks_file, fcntl.LOCK_UN)
 
     # Record image as clear_streak, with number of streaks
+    fcntl.flock(processed_images, fcntl.LOCK_EX)
     processed_images.write(str(file) + ' clear_streak ' + str(len(streaks)) + '\n')
+    fcntl.flock(processed_images, fcntl.LOCK_UN)
     processed_images.close()
     streaks_file.close()
 
