@@ -18,7 +18,7 @@ TODO: ...the corrupted images then cause problems in the processing, such as dur
       var = 1.0 / (1.0/r_bkg + 1.0/g_bkg + 1.0/b_bkg)
 
 """
-from fireopal_settings import *
+from settings import *
 import os, rawpy, cv2, datetime, nova_client
 import numpy as np
 from scipy.ndimage import gaussian_filter
@@ -392,7 +392,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     processed_images.close()
     streaks_file.close()
 
-def process_list(filelist, output):
+def process_images(filelist, output):
 
     # TODO: don't keep opening and closing the file streams. Keep them open until
     # finished then close them all.
@@ -426,4 +426,4 @@ def process_list(filelist, output):
 
 if __name__ == "__main__":
     filelist = os.listdir(datadirectory)
-    process_list(filelist, output)
+    process_images(filelist, output)
