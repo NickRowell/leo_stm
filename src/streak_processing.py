@@ -114,7 +114,7 @@ def normal_line(x1, y1, x2, y2):
 
     return theta, d
 
-def streak_processing(output, date_str):
+def process_streaks(output, date_str):
 
     ############################
     #
@@ -364,5 +364,5 @@ def streak_processing(output, date_str):
     s.quit()
 
 if __name__ == "__main__":
-    streak_processing(output, '2019-12-28')
+    process_streaks(output, '2019-12-28')
 
