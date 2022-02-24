@@ -1,8 +1,8 @@
 import os, sys, time
 from pathlib import Path
-from fireopal_settings import *
-from fireopal_image_processing import process_list
-from fireopal_streak_processing import streak_processing
+from settings import *
+from image_processing import process_images
+from streak_processing import process_streaks
 
 print('Starting up...', flush=True)
 
@@ -70,7 +70,7 @@ myfilelist = filelist[task_id-task_min : : task_count]
 print('processor %d of %d has %d files' % (task_id-task_min, task_count, len(myfilelist)), flush=True)
 
 # and off we go
-process_list(myfilelist, output)
+process_images(myfilelist, output)
 
 # Launch streak processing from first task
 if task_id == task_min:
@@ -78,4 +78,4 @@ if task_id == task_min:
     # TODO Do this better by using slurm --wait.
     time.sleep(600)
 
-    streak_processing(output, date)
+    process_streaks(output, date)
