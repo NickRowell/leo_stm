@@ -8,7 +8,7 @@ bunch of streaks detected at the image processing stage of the ROE FireOPAL pipe
 
 """
 
-from fireopal_settings import *
+from settings import *
 import numpy as np, datetime
 import smtplib
 from os.path import basename
