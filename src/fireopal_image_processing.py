@@ -1,5 +1,22 @@
 """
 Image processing pipeline for satellite streak extraction and calibration.
+
+TODO: improve logging
+TODO: make robust to Astrometry.NET failures, which can occur for bad streak images
+TODO: rationalise file opening/closing; improve thread safety with file locks
+TODO: profile the code and optimise to reduce memory usage
+
+Handle these problems:
+
+TODO: input NEF images are occasionally corrupted; the line:
+      rgb = raw.postprocess()
+      produces the following log entry:
+      /home/nr/fireopal/archive/2021-12-18/005_2021-12-18_192914_A_DSC_0716.NEF: data corrupted at 25640655
+
+TODO: ...the corrupted images then cause problems in the processing, such as during conversion to grayscale:
+      /home/nr/fireopal/leo_stm/src/fireopal_image_processing.py:50: RuntimeWarning: divide by zero encountered in true_divide
+      var = 1.0 / (1.0/r_bkg + 1.0/g_bkg + 1.0/b_bkg)
+
 """
 from fireopal_settings import *
 import os, rawpy, cv2, datetime, nova_client
@@ -272,7 +289,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     # Convert streaks list to array
     streaks = np.asarray(streaks)
 
-    print('Found ' + str(len(streaks)) + ' streaks')
+    print('Found ' + str(len(streaks)) + ' streaks', flush=True)
 
     if len(streaks) == 0:
         # Image is clear but no streaks found
@@ -288,7 +305,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     srcL = str(datadirectory) + file
     # Eliminate symlinks from input file path
     src = os.path.realpath(srcL)
-    print('symlinking ' + str(dest) + ' -> ' + str(src))
+    print('symlinking ' + str(dest) + ' -> ' + str(src), flush=True)
     os.symlink(src, dest)
 
 
@@ -334,7 +351,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
         returned_value = os.system(cmd)
 
-        print('returned_value = ' + str(returned_value))
+        print('returned_value = ' + str(returned_value), flush=True)
 
         # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
         if not os.path.exists(wcsfile):
@@ -386,7 +403,7 @@ def process_list(filelist, output):
     # containing streak data. The data consists of the filename of
     # an image containing a satellite streak, together with coordinate and
     # timestamp information used in the next step to calculate orbits.
-        print(file)
+        print(file, flush=True)
 
         streaks = open(output + 'streaks_data.txt','a+')
         # Creates a .txt document to store data extracted from image processing loop
@@ -400,7 +417,7 @@ def process_list(filelist, output):
             processed_images.close()
             processed_images_read.close()
             streaks.close()
-            print('    already processed')
+            print('    already processed', flush=True)
             continue
             # Skips already processed files and continues to next iteration
 
