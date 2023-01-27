@@ -1,7 +1,6 @@
 """
-Image processing application for generation of RGB flatfield images
-from cloudy images.
-
+Python utility for conversion of raw NEF RGB image files to FITS files separated
+by R/G/B channel.
 """
 import os, rawpy
 from astropy.io import fits
