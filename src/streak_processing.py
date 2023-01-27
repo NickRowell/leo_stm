@@ -364,5 +364,5 @@ def process_streaks(output, date_str):
     s.quit()
 
 if __name__ == "__main__":
-    process_streaks(output, '2019-12-28')
+    process_streaks(output, '2022-02-11')
 
