@@ -19,7 +19,13 @@ else:
     print('Executing as a standalone process', flush=True)
 
 # List of files in the datadirectory
-filelist = os.listdir(datadirectory)
+realdatadir = os.path.realpath(datadirectory)
+try:
+    filelist = os.listdir(datadirectory)
+except NotADirectoryError:
+    # Workaround for intermittent issue
+    print('Encountered NotADirectoryError; realpath of %s is %s' % (datadirectory, realdatadir), flush=True)
+    quit()
 
 # Remove files that are not NEF images
 filelist = [f for f in filelist if f.endswith('.NEF')]
@@ -37,7 +43,7 @@ tok = first.split('_')
 try:
     date = tok[1]
 except:
-    print('cannot find date in filename %s' % first, flush=True)
+    print('Cannot find date in filename %s' % first, flush=True)
     sys.exit()
 
 # set up directory for output products
@@ -46,6 +52,9 @@ output = output + '/' + date + '/'
 if task_id == task_min:
     # First task creates the output directories
     try:
+
+        print('Creating output directory %s' % output, flush=True)
+
         os.mkdir(output)
         os.mkdir(output + 'detected_streaks')
         os.mkdir(output + 'streak_images')
@@ -67,7 +76,7 @@ else:
 
 # list of all the files, split into "my" files
 myfilelist = filelist[task_id-task_min : : task_count]
-print('processor %d of %d has %d files' % (task_id-task_min, task_count, len(myfilelist)), flush=True)
+print('Processor %d of %d has %d files' % (task_id-task_min, task_count, len(myfilelist)), flush=True)
 
 # and off we go
 process_images(myfilelist, output)
