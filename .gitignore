@@ -1,0 +1,11 @@
+# For tips see https://www.atlassian.com/git/tutorials/saving-changes/gitignore
+
+# Ignore local settings file
+src/settings.py
+
+# Ignore python cache
+**/__pycache__/**
+
+# Ignore slurm logger outputs
+R-*.out
+R-*.err
