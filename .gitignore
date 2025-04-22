@@ -1,7 +1,10 @@
 # For tips see https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
-# Ignore local settings file
+
+
+# Ignore local settings files
 src/settings.py
+src/identification/identification_settings.py
 
 # Ignore python cache
 **/__pycache__/**
