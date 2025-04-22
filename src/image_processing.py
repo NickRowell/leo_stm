@@ -28,10 +28,10 @@ import fcntl
 
 import matplotlib.pyplot as plt
 
-# Some globals
-vignet_r = 0
-vignet_g = 0
-vignet_b = 0
+# Some globals - COMMENTED OUT TILL FEATURE BRANCH CREATED
+#vignet_r = 0
+#vignet_g = 0
+#vignet_b = 0
 
 def convert_to_grey(rgbimage):
 
@@ -228,93 +228,86 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         processed_images.close()
         streaks_file.close()
         return
-    
-    ###########################
-    
-    # XXX Write uncorrected images to file
-    path = str(output) + '/' + file.replace('.NEF', '_r_uncorrected.png')
-    cv2.imwrite(path, rgb[:,:,0])
-    path = str(output) + '/' + file.replace('.NEF', '_g_uncorrected.png')
-    cv2.imwrite(path, rgb[:,:,1])
-    path = str(output) + '/' + file.replace('.NEF', '_b_uncorrected.png')
-    cv2.imwrite(path, rgb[:,:,2])
-    
+
+    # THE FOLLOWING EXPERIMENTAL VIGNETTING CORRECTION CODE IS COMMENTED OUT TIL FEATURE BRANCH IS CREATED
+
+    # Write uncorrected images to file
+#    path = str(output) + '/' + file.replace('.NEF', '_r_uncorrected.png')
+#    cv2.imwrite(path, rgb[:,:,0])
+#    path = str(output) + '/' + file.replace('.NEF', '_g_uncorrected.png')
+#    cv2.imwrite(path, rgb[:,:,1])
+#    path = str(output) + '/' + file.replace('.NEF', '_b_uncorrected.png')
+#    cv2.imwrite(path, rgb[:,:,2])
+
     # Display histogram of uncorrected pixel values
     #H,bins = np.histogram(rgb[:,:,0], bins=255)
     #plt.bar(bins[:-1],H,width=1)
     #plt.show()
-    
-    path = str(output) + '/' + file.replace('.NEF', '_uncorrected.png')
-    cv2.imwrite(path, rgb)
-    
-    signal, noise, grey = convert_to_grey(rgb)
-    path = str(output) + '/' + file.replace('.NEF', '_grey_uncorrected.png')
-    cv2.imwrite(path, grey)
-    
-    print('max r before = ', np.max(rgb[:,:,0]))
-    print('max g before = ', np.max(rgb[:,:,1]))
-    print('max b before = ', np.max(rgb[:,:,2]))
-    
-    print('type (vignet_r[0,0]) = ', type(vignet_r[0,0]))
-    print('type (rgb[0,0,0]) = ', type(rgb[0,0,0]))
-    
+
+#    path = str(output) + '/' + file.replace('.NEF', '_uncorrected.png')
+#    cv2.imwrite(path, rgb)
+
+#    signal, noise, grey = convert_to_grey(rgb)
+#    path = str(output) + '/' + file.replace('.NEF', '_grey_uncorrected.png')
+#    cv2.imwrite(path, grey)
+
+#    print('max r before = ', np.max(rgb[:,:,0]))
+#    print('max g before = ', np.max(rgb[:,:,1]))
+#    print('max b before = ', np.max(rgb[:,:,2]))
+
+#    print('type (vignet_r[0,0]) = ', type(vignet_r[0,0]))
+#    print('type (rgb[0,0,0]) = ', type(rgb[0,0,0]))
+
     # TODO: apply vignetting corrections; avoid wraparound
-    r_corr = np.divide(rgb[:,:,0].astype('float64'), vignet_r)
-    r_corr = np.clip(r_corr, 0, 255)
-    
-    g_corr = np.divide(rgb[:,:,1].astype('float64'), vignet_g)
-    g_corr = np.clip(g_corr, 0, 255)
-    
-    b_corr = np.divide(rgb[:,:,2].astype('float64'), vignet_b)
-    b_corr = np.clip(b_corr, 0, 255)
-    
-    rgb[:,:,0] = r_corr.astype(np.uint8)
-    rgb[:,:,1] = g_corr.astype(np.uint8)
-    rgb[:,:,2] = b_corr.astype(np.uint8)
-    
+#    r_corr = np.divide(rgb[:,:,0].astype('float64'), vignet_r)
+#    r_corr = np.clip(r_corr, 0, 255)
+
+#    g_corr = np.divide(rgb[:,:,1].astype('float64'), vignet_g)
+#    g_corr = np.clip(g_corr, 0, 255)
+
+#    b_corr = np.divide(rgb[:,:,2].astype('float64'), vignet_b)
+#    b_corr = np.clip(b_corr, 0, 255)
+
+#    rgb[:,:,0] = r_corr.astype(np.uint8)
+#    rgb[:,:,1] = g_corr.astype(np.uint8)
+#    rgb[:,:,2] = b_corr.astype(np.uint8)
+
     #rgb[:,:,0] = np.divide(rgb[:,:,0], vignet_r)
     #rgb[:,:,1] = np.divide(rgb[:,:,1], vignet_g)
     #rgb[:,:,2] = np.divide(rgb[:,:,2], vignet_b)
-    
+
     # Display histogram of corrected pixel values
-    H,bins = np.histogram(r_corr, bins=255)
-    plt.bar(bins[:-1],H,width=1)
-    plt.show()
-    
-    print('max r after = ', np.max(rgb[:,:,0]))
-    print('max g after = ', np.max(rgb[:,:,1]))
-    print('max b after = ', np.max(rgb[:,:,2]))
-    
-    
-    
-    
+#    H,bins = np.histogram(r_corr, bins=255)
+#    plt.bar(bins[:-1],H,width=1)
+#    plt.show()
+
+#    print('max r after = ', np.max(rgb[:,:,0]))
+#    print('max g after = ', np.max(rgb[:,:,1]))
+#    print('max b after = ', np.max(rgb[:,:,2]))
+
     # Write corrected images to file
-    path = str(output) + '/' + file.replace('.NEF', '_r_corrected.png')
-    cv2.imwrite(path, rgb[:,:,0])
-    path = str(output) + '/' + file.replace('.NEF', '_g_corrected.png')
-    cv2.imwrite(path, rgb[:,:,1])
-    path = str(output) + '/' + file.replace('.NEF', '_b_corrected.png')
-    cv2.imwrite(path, rgb[:,:,2])
-    
-    path = str(output) + '/' + file.replace('.NEF', '_corrected.png')
-    cv2.imwrite(path, rgb)
-    
-    signal, noise, grey = convert_to_grey(rgb)
-    path = str(output) + '/' + file.replace('.NEF', '_grey_corrected.png')
-    cv2.imwrite(path, grey)
-    
-    
-    
+#    path = str(output) + '/' + file.replace('.NEF', '_r_corrected.png')
+#    cv2.imwrite(path, rgb[:,:,0])
+#    path = str(output) + '/' + file.replace('.NEF', '_g_corrected.png')
+#    cv2.imwrite(path, rgb[:,:,1])
+#    path = str(output) + '/' + file.replace('.NEF', '_b_corrected.png')
+#    cv2.imwrite(path, rgb[:,:,2])
+
+#    path = str(output) + '/' + file.replace('.NEF', '_corrected.png')
+#    cv2.imwrite(path, rgb)
+
+#    signal, noise, grey = convert_to_grey(rgb)
+#    path = str(output) + '/' + file.replace('.NEF', '_grey_corrected.png')
+#    cv2.imwrite(path, grey)
+
     ############################
-    
-    
 
     # Estimate signal, noise and greyscale image
     signal, noise, grey = convert_to_grey(rgb)
 
     source = np.where(signal < source_extraction_sigmas*np.sqrt(noise), 0, 255)
 
-    # XXX Debugging: store raw source image
+    # Debugging: store raw source image
     #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source_raw.png'), source)
 
     # Apply morphological opening to remove noise
@@ -325,14 +318,14 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     kernel = circular_kernel(closing_kernel_radius)
     source = cv2.morphologyEx(source.astype('uint8'), cv2.MORPH_CLOSE, kernel)
 
-    # XXX Debugging: store processed source image
+    # Debugging: store processed source image
     #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_source_processed.png'), source)
 
     # Connect pixels to build sources.
     # See https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(source, connectivity=8)
 
-    # XXX Debugging: render extracted sources
+    # Debugging: render extracted sources
     #print('Found ' + str(num_labels) + ' sources')
     # Map component labels to hue val
     #label_hue = np.uint8(179*labels/np.max(labels))
@@ -396,7 +389,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     os.symlink(src, dest)
 
 
-    # XXX Debugging: draw lines onto original image
+    # Debugging: draw lines onto original image
     #for x1, y1, x2, y2 in streaks:
     #    cv2.line(rgb, (int(x1),int(y1)), (int(x2),int(y2)), (0,0,255), 2)
     #cv2.imwrite(str(output) + '/detected_streaks/' + file.replace('.NEF', '_lines.png'),rgb)
@@ -488,26 +481,26 @@ def process_images(filelist, output):
     # TODO: don't keep opening and closing the file streams. Keep them open until
     # finished then close them all.
     # TODO: rationalise this main loop
-    
+
+    # THE FOLLOWING EXPERIMENAL CODE IS COMMENTED OUT TIL VIGNETTING CORRECTION FEATURE BRANCH IS CREATED
     # Load vignetting corrections to global variables
-    global vignet_r
-    global vignet_g
-    global vignet_b
-    
-    vignet_r = cv2.imread(vignet_r_path, cv2.IMREAD_GRAYSCALE)
-    vignet_g = cv2.imread(vignet_g_path, cv2.IMREAD_GRAYSCALE)
-    vignet_b = cv2.imread(vignet_b_path, cv2.IMREAD_GRAYSCALE)
-    
+#    global vignet_r
+#    global vignet_g
+#    global vignet_b
+
+#    vignet_r = cv2.imread(vignet_r_path, cv2.IMREAD_GRAYSCALE)
+#    vignet_g = cv2.imread(vignet_g_path, cv2.IMREAD_GRAYSCALE)
+#    vignet_b = cv2.imread(vignet_b_path, cv2.IMREAD_GRAYSCALE)
+
     # Scale vignetting correction images to [0:1] range
     #vignet_r = np.divide(vignet_r, 255)
     #vignet_g = np.divide(vignet_g, 255)
     #vignet_b = np.divide(vignet_b, 255)
-    
-    vignet_r = np.divide(vignet_r, 191)
-    vignet_g = np.divide(vignet_g, 191)
-    vignet_b = np.divide(vignet_b, 191)
-    
-    
+
+#    vignet_r = np.divide(vignet_r, 191)
+#    vignet_g = np.divide(vignet_g, 191)
+#    vignet_b = np.divide(vignet_b, 191)
+
     for file in filelist:
     # The first loop processes all images in a directory and returns a text file
     # containing streak data. The data consists of the filename of
