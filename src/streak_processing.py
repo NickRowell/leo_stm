@@ -12,11 +12,11 @@ from settings import *
 import numpy as np, datetime
 import smtplib
 from os.path import basename
-from email.message import EmailMessage
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import COMMASPACE, formatdate
+#from email.message import EmailMessage
+#from email.mime.application import MIMEApplication
+#from email.mime.multipart import MIMEMultipart
+#from email.mime.text import MIMEText
+#from email.utils import COMMASPACE, formatdate
 
 class Streak:
     
@@ -345,23 +345,24 @@ def process_streaks(output, date_str):
 
     # TODO: create some visualisation of the detected satellites
 
-    msg = MIMEMultipart()
-    msg['Subject'] = 'ROE FireOPAL results ' + date_str
-    msg['From']    = 'nr@roe.ac.uk'
-    msg['To']      = email_addresses
-    msg['Date']    = formatdate(localtime=True)
+    # DISABLED on 20/07/2024; not working
+#    msg = MIMEMultipart()
+#    msg['Subject'] = 'ROE FireOPAL results ' + date_str
+#    msg['From']    = 'nr@roe.ac.uk'
+#    msg['To']      = email_addresses
+#    msg['Date']    = formatdate(localtime=True)
 
-    msg.attach(MIMEText('This email contains the results of the ROE FireOPAL pipeline for the night starting on ' + date_str))
+#    msg.attach(MIMEText('This email contains the results of the ROE FireOPAL pipeline for the night starting on ' + date_str))
 
-    # Attach the satellites.xt file
-    with open(resultsFile, "rb") as fil:
-        part = MIMEApplication(fil.read(),Name=basename(resultsFile))
-    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(resultsFile)
-    msg.attach(part)
+    # Attach the satellites.txt file
+#    with open(resultsFile, "rb") as fil:
+#        part = MIMEApplication(fil.read(),Name=basename(resultsFile))
+#    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(resultsFile)
+#    msg.attach(part)
 
-    s = smtplib.SMTP('mail.roe.ac.uk', 25)
-    s.send_message(msg)
-    s.quit()
+#    s = smtplib.SMTP('mail.roe.ac.uk', 25)
+#    s.send_message(msg)
+#    s.quit()
 
 if __name__ == "__main__":
     process_streaks(output, '2022-02-11')

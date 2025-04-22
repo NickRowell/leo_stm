@@ -436,6 +436,8 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
         # Compose Astrometry.NET command and run it synchronously (wait for results)
         cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
+
+	# TODO: extra logging around this, to identify and debug images that fail astrometric calibration
         returned_value = os.system(cmd)
 
         print('returned_value = ' + str(returned_value), flush=True)
@@ -464,10 +466,12 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Sets the times for the streak endpoints to be the image
         # timestamp and the timestamp + shutter speed.
         # TODO: Make exposure time a global parameter
+	# TODO: this isn't used; maybe move to a utility script
         time_a = time.time()
         time_b = (time + datetime.timedelta(seconds=5)).time()
 
         # Write details of streak to the file
+	# TODO: add streak index number, to match against detected streak image
         fcntl.flock(streaks_file, fcntl.LOCK_EX)
         streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2))
         fcntl.flock(streaks_file, fcntl.LOCK_UN)
