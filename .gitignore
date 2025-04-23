@@ -12,3 +12,6 @@ src/identification/identification_settings.py
 # Ignore slurm logger outputs
 R-*.out
 R-*.err
+
+# Ignore downloaded spacetrack catalogues
+ST_Catalog_*

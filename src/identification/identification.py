@@ -298,7 +298,13 @@ class IdentifySatellites(object):
         """
         # Loads the wcs.fits file and gets bounds & times of images etc.
         wcs_filename = streaklet_data[0].replace("streak","wcs")
-        f = fits.open(self.wcs_path+'/'+wcs_filename[:-4]+'.fits')
+
+        # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
+        wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
+        if not os.path.exists(wcs_filepath):
+            continue
+
+        f = fits.open(wcs_filepath)
 
         # Prevents printing error message about 'WCS transformation has more axes (2)...'
         with catch_warnings():
@@ -500,7 +506,7 @@ class IdentifySatellites(object):
                     ,results['TLE2'][0]])
 
                 # # Optional plotting ability
-                DF.Plot(arr, w, width, height, self.streaklets.iloc[i].tolist(), self.path, name, i, self.streaklets["Filename"][i], results, cutoff)
+                # DF.Plot(arr, w, width, height, self.streaklets.iloc[i].tolist(), self.path, name, i, self.streaklets["Filename"][i], results, cutoff)
 
             else:
                 print(" --- No satellites in image --- ")
@@ -554,8 +560,8 @@ if __name__ == "__main__":
 # Initialises classes
 IS = IdentifySatellites(date, path, image_path, wcs_path)
 # # Uncomment both if useing DisplayFigure() Class: Also uncomment line 503
-import matplotlib.pyplot as plt
-DF = DisplayFigure()
+# import matplotlib.pyplot as plt
+# DF = DisplayFigure()
 
 # Runs identification class through main Run() function
 IS.Run()

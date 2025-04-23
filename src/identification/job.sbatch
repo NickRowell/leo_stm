@@ -13,7 +13,7 @@
 #SBATCH --job-name=SatelliteIdentification
 #SBATCH --time=1:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=1G
+#SBATCH --mem=4G
 #SBATCH --output=R-%x.%j.out
 #SBATCH --error=R-%x.%j.err
 
