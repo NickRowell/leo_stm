@@ -1,5 +1,6 @@
 # 'Trail' is sometimes used in place of 'streaklet' but both have the same meaning in this code
 
+import os
 from os import listdir, remove
 from sys import argv
 import pandas as pd
@@ -298,12 +299,7 @@ class IdentifySatellites(object):
         """
         # Loads the wcs.fits file and gets bounds & times of images etc.
         wcs_filename = streaklet_data[0].replace("streak","wcs")
-
-        # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
         wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
-        if not os.path.exists(wcs_filepath):
-            continue
-
         f = fits.open(wcs_filepath)
 
         # Prevents printing error message about 'WCS transformation has more axes (2)...'
@@ -478,6 +474,15 @@ class IdentifySatellites(object):
         failed = []
         for i in range(len(self.streaklets)):
 
+            # Check that WCS file exists before proceeding
+            wcs_filename = self.streaklets.iloc[i][0].replace("streak","wcs")
+
+            # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
+            wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
+            if not os.path.exists(wcs_filepath):
+                print("\nNon-existent WCS file: ",wcs_filename)
+                continue
+
             print("\nStreaklet No. {}/{}:".format(i+1,len(self.streaklets)),"\n  File:",self.streaklets["Filename"][i],"\n  Time:",self.streaklets["Time1"][i],"UTC/BST-1")
             # Process image to get points of start and end of trail etc. and list of possible matches ('arr')
             w, width, height, arr, RADecPoint1, RADecPoint2 = self.ProcessImage(self.streaklets.iloc[i])
@@ -545,7 +550,7 @@ class IdentifySatellites(object):
 
         # Saves dataframe of all satellite streaklets and their identification results
         out = pd.DataFrame(data=self.output_file, columns=["Photo#","Filename","Satellite","NORAD_CAT_ID","Likelihood","Distance","Length","Angle","Cutoff","RADecPoint1","RADecPoint2","TLE1","TLE2"])
-        out.to_csv("output_data_"+str(self.date)+".csv", index=False)
+        out.to_csv("satellite_id_"+str(self.date)+".csv", index=False)
 
 # Gets input parameters from terminal prompt
 # Example terminal input:
