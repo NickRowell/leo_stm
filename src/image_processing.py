@@ -464,9 +464,8 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         time_b = (time + datetime.timedelta(seconds=5)).time()
 
         # Write details of streak to the file
-	# TODO: add streak index number, to match against detected streak image
         fcntl.flock(streaks_file, fcntl.LOCK_EX)
-        streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, ra1, dec1, x1, y1, ra2, dec2, x2, y2))
+        streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, str(idx+1), ra1, dec1, x1, y1, ra2, dec2, x2, y2))
         fcntl.flock(streaks_file, fcntl.LOCK_UN)
 
     # Record image as clear_streak, with number of streaks

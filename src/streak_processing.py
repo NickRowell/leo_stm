@@ -31,16 +31,17 @@ class Streak:
     def __init__(self, line):
         columns = line.split(',') 
 
-        # file, ra1, dec1, x1, y1, ra2, dec2, x2, y2
+        # file, streak_idx, ra1, dec1, x1, y1, ra2, dec2, x2, y2
         self.filename = columns[0]
-        self.ra1 = float(columns[1])
-        self.dec1 = float(columns[2])
-        self.x1 = float(columns[3])
-        self.y1 = float(columns[4])
-        self.ra2 = float(columns[5])
-        self.dec2 = float(columns[6])
-        self.x2 = float(columns[7])
-        self.y2 = float(columns[8])
+        self.idx = int(columns[1])
+        self.ra1 = float(columns[2])
+        self.dec1 = float(columns[3])
+        self.x1 = float(columns[4])
+        self.y1 = float(columns[5])
+        self.ra2 = float(columns[6])
+        self.dec2 = float(columns[7])
+        self.x2 = float(columns[8])
+        self.y2 = float(columns[9])
         # Get streak end point times by extracting shutter open/close times from filename
         self.time_open , self.time_close = get_shutter_open_close_datetimes(self.filename)
 
