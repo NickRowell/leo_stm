@@ -1,6 +1,7 @@
 # For tips see https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
-
+# Ignore any spyder files
+**/.spyproject/**
 
 # Ignore local settings files
 src/settings.py
