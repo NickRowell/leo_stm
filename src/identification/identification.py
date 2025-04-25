@@ -183,20 +183,16 @@ class IdentifySatellites(object):
         """
         # Reads a txt file of the start and end of every streaklet across all images that were processed, adds header names and sorts by filename (chronologically)
         self.streaklets = pd.read_csv(self.path+'/streaks_data.txt', sep=",", header=None)
-        self.streaklets.columns = ['Filename','RA1','Dec1','x1','y1','RA2','Dec2','x2','y2']
+        self.streaklets.columns = ['Filename','idx','RA1','Dec1','x1','y1','RA2','Dec2','x2','y2']
         self.streaklets = self.streaklets.sort_values(by=['Filename']).reset_index(drop=True)
 
-        # Processed streaks_data.txt file doesn't have streak_x identification number in the png filename column, so adds it in here by ordering and changing filename
-        filenames = self.streaklets['Filename'].to_numpy()
-        filenames_unique, fn_counts = unique(filenames, return_counts=True)
-        offset, iter = 0, 0
-        while iter < len(fn_counts):
-            val = fn_counts[iter]
-            for k in range(val):
-                x = iter + k + offset
-                self.streaklets.at[x, 'Filename'] = str(self.streaklets['Filename'][x].replace('.NEF','_streak_'+str(k+1)+'.png'))
-            offset += val - 1
-            iter += 1
+        # Modify filenames of original NEF images to get the corresponding filenames
+        # for the individual streaks (may be multiple streaks per NEF image)
+        for i in range(0,len(self.streaklets['Filename'])):
+            fn = self.streaklets['Filename'][i]
+            idx = self.streaklets['idx'][i]
+            newFn = str(fn.replace('.NEF','_streak_'+str(idx)+'.png'))
+            self.streaklets.at[i, 'Filename'] = newFn
 
         print("       Total number of streaklets detected on this night:",len(self.streaklets))
 
