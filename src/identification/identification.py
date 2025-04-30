@@ -309,10 +309,10 @@ class IdentifySatellites(object):
         height = header[21]
 
         # Converts date of image capture to a list of [YYYY, MM, DD]
-        date = list(map(int, streaklet_data[9].strftime('%Y,%m,%d').split(",")))
+        date = list(map(int, streaklet_data[10].strftime('%Y,%m,%d').split(",")))
         # Lists of [YYYY, MM, DD, HH, MM, SS] for start and end times of shutter being open
-        start = date+list(map(int, streaklet_data[9].strftime('%H,%M,%S').split(",")))
-        end = date+list(map(int, streaklet_data[10].strftime('%H,%M,%S').split(",")))
+        start = date+list(map(int, streaklet_data[10].strftime('%H,%M,%S').split(",")))
+        end = date+list(map(int, streaklet_data[11].strftime('%H,%M,%S').split(",")))
         # Optional parameter to allow for a fudge factor or offset in the shutter trigger
         shutter_offset = 0#1.85
 
