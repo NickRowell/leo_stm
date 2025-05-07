@@ -28,11 +28,6 @@ import fcntl
 
 import matplotlib.pyplot as plt
 
-# Some globals - COMMENTED OUT TILL FEATURE BRANCH CREATED
-#vignet_r = 0
-#vignet_g = 0
-#vignet_b = 0
-
 def convert_to_grey(rgbimage):
 
     """ This function converts an RGB image to a
@@ -229,79 +224,6 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streaks_file.close()
         return
 
-    # THE FOLLOWING EXPERIMENTAL VIGNETTING CORRECTION CODE IS COMMENTED OUT TIL FEATURE BRANCH IS CREATED
-
-    # Write uncorrected images to file
-#    path = str(output) + '/' + file.replace('.NEF', '_r_uncorrected.png')
-#    cv2.imwrite(path, rgb[:,:,0])
-#    path = str(output) + '/' + file.replace('.NEF', '_g_uncorrected.png')
-#    cv2.imwrite(path, rgb[:,:,1])
-#    path = str(output) + '/' + file.replace('.NEF', '_b_uncorrected.png')
-#    cv2.imwrite(path, rgb[:,:,2])
-
-    # Display histogram of uncorrected pixel values
-    #H,bins = np.histogram(rgb[:,:,0], bins=255)
-    #plt.bar(bins[:-1],H,width=1)
-    #plt.show()
-
-#    path = str(output) + '/' + file.replace('.NEF', '_uncorrected.png')
-#    cv2.imwrite(path, rgb)
-
-#    signal, noise, grey = convert_to_grey(rgb)
-#    path = str(output) + '/' + file.replace('.NEF', '_grey_uncorrected.png')
-#    cv2.imwrite(path, grey)
-
-#    print('max r before = ', np.max(rgb[:,:,0]))
-#    print('max g before = ', np.max(rgb[:,:,1]))
-#    print('max b before = ', np.max(rgb[:,:,2]))
-
-#    print('type (vignet_r[0,0]) = ', type(vignet_r[0,0]))
-#    print('type (rgb[0,0,0]) = ', type(rgb[0,0,0]))
-
-    # TODO: apply vignetting corrections; avoid wraparound
-#    r_corr = np.divide(rgb[:,:,0].astype('float64'), vignet_r)
-#    r_corr = np.clip(r_corr, 0, 255)
-
-#    g_corr = np.divide(rgb[:,:,1].astype('float64'), vignet_g)
-#    g_corr = np.clip(g_corr, 0, 255)
-
-#    b_corr = np.divide(rgb[:,:,2].astype('float64'), vignet_b)
-#    b_corr = np.clip(b_corr, 0, 255)
-
-#    rgb[:,:,0] = r_corr.astype(np.uint8)
-#    rgb[:,:,1] = g_corr.astype(np.uint8)
-#    rgb[:,:,2] = b_corr.astype(np.uint8)
-
-    #rgb[:,:,0] = np.divide(rgb[:,:,0], vignet_r)
-    #rgb[:,:,1] = np.divide(rgb[:,:,1], vignet_g)
-    #rgb[:,:,2] = np.divide(rgb[:,:,2], vignet_b)
-
-    # Display histogram of corrected pixel values
-#    H,bins = np.histogram(r_corr, bins=255)
-#    plt.bar(bins[:-1],H,width=1)
-#    plt.show()
-
-#    print('max r after = ', np.max(rgb[:,:,0]))
-#    print('max g after = ', np.max(rgb[:,:,1]))
-#    print('max b after = ', np.max(rgb[:,:,2]))
-
-    # Write corrected images to file
-#    path = str(output) + '/' + file.replace('.NEF', '_r_corrected.png')
-#    cv2.imwrite(path, rgb[:,:,0])
-#    path = str(output) + '/' + file.replace('.NEF', '_g_corrected.png')
-#    cv2.imwrite(path, rgb[:,:,1])
-#    path = str(output) + '/' + file.replace('.NEF', '_b_corrected.png')
-#    cv2.imwrite(path, rgb[:,:,2])
-
-#    path = str(output) + '/' + file.replace('.NEF', '_corrected.png')
-#    cv2.imwrite(path, rgb)
-
-#    signal, noise, grey = convert_to_grey(rgb)
-#    path = str(output) + '/' + file.replace('.NEF', '_grey_corrected.png')
-#    cv2.imwrite(path, grey)
-
-    ############################
-
     # Estimate signal, noise and greyscale image
     signal, noise, grey = convert_to_grey(rgb)
 
@@ -430,7 +352,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Compose Astrometry.NET command and run it synchronously (wait for results)
         cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
 
-	# TODO: extra logging around this, to identify and debug images that fail astrometric calibration
+	    # TODO: extra logging around this, to identify and debug images that fail astrometric calibration
         returned_value = os.system(cmd)
 
         print('returned_value = ' + str(returned_value), flush=True)
@@ -459,7 +381,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Sets the times for the streak endpoints to be the image
         # timestamp and the timestamp + shutter speed.
         # TODO: Make exposure time a global parameter
-	# TODO: this isn't used; maybe move to a utility script
+	    # TODO: this isn't used; maybe move to a utility script
         time_a = time.time()
         time_b = (time + datetime.timedelta(seconds=5)).time()
 
@@ -480,25 +402,6 @@ def process_images(filelist, output):
     # TODO: don't keep opening and closing the file streams. Keep them open until
     # finished then close them all.
     # TODO: rationalise this main loop
-
-    # THE FOLLOWING EXPERIMENAL CODE IS COMMENTED OUT TIL VIGNETTING CORRECTION FEATURE BRANCH IS CREATED
-    # Load vignetting corrections to global variables
-#    global vignet_r
-#    global vignet_g
-#    global vignet_b
-
-#    vignet_r = cv2.imread(vignet_r_path, cv2.IMREAD_GRAYSCALE)
-#    vignet_g = cv2.imread(vignet_g_path, cv2.IMREAD_GRAYSCALE)
-#    vignet_b = cv2.imread(vignet_b_path, cv2.IMREAD_GRAYSCALE)
-
-    # Scale vignetting correction images to [0:1] range
-    #vignet_r = np.divide(vignet_r, 255)
-    #vignet_g = np.divide(vignet_g, 255)
-    #vignet_b = np.divide(vignet_b, 255)
-
-#    vignet_r = np.divide(vignet_r, 191)
-#    vignet_g = np.divide(vignet_g, 191)
-#    vignet_b = np.divide(vignet_b, 191)
 
     for file in filelist:
     # The first loop processes all images in a directory and returns a text file
