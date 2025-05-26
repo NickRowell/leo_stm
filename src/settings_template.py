@@ -23,12 +23,8 @@ image_height = 4928
 # Input directory of *.NEF images
 datadirectory = ''
 
-# Location of the Astrometry.NET client
-clientpath = '../nova_client.py'
-
-# An API key is needed to access astrometry.net. The API key is linked
-# to a specific user account.
-apikey = ''
+# Command line parameters for solve-field application
+solve_field_options=''
 
 # Cloudy/clear image detection parameters
 
@@ -45,14 +41,14 @@ cl_lower_thresh=0.1
 cl_sigma=10
 
 # Defines boundary of rectangular region used to determine cloudy/clear status
-row1 = int(2000) 
+row1 = int(2000)
 row2 = int(2500)
 col1 = int(2000)
 col2 = int(2500)
 
 
 # Satellite streak detection parameters
-    
+
 # Thresholded source extraction: number of sigmas above the background for sources.
 # A rather low significance level seems necessary in this application.
 source_extraction_sigmas = 0.5

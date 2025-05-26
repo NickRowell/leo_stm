@@ -19,8 +19,8 @@ from os.path import basename
 #from email.utils import COMMASPACE, formatdate
 
 class Streak:
-    
-    """ 
+
+    """
     A Streak object represents a distinct streak found in an Image object.
     It is characterised by the image and celestial coordinates of each end of
     the streak, and two times that are the opening and closing times of the shutter.
@@ -29,7 +29,7 @@ class Streak:
     correspond to the shutter opening, i.e. streak start.
     """
     def __init__(self, line):
-        columns = line.split(',') 
+        columns = line.split(',')
 
         # file, streak_idx, ra1, dec1, x1, y1, ra2, dec2, x2, y2
         self.filename = columns[0]
@@ -47,7 +47,7 @@ class Streak:
 
     def __repr__(self):
         return "Streak()"
-    
+
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
@@ -192,7 +192,7 @@ def process_streaks(output, date_str):
             paths = [path1, path2]
 
             # Check if either find a matching streak in the subsequent images
-        
+
             # Loop over subsequent images until there's no more chance of finding a matching streak
             for image2 in sorted(activity)[idx+1:]:
 

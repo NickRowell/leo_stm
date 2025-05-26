@@ -2,7 +2,6 @@
 Image processing pipeline for satellite streak extraction and calibration.
 
 TODO: improve logging
-TODO: make robust to Astrometry.NET failures, which can occur for bad streak images
 TODO: rationalise file opening/closing; improve thread safety with file locks
 TODO: profile the code and optimise to reduce memory usage
 
@@ -19,7 +18,7 @@ TODO: ...the corrupted images then cause problems in the processing, such as dur
 
 """
 from settings import *
-import os, rawpy, cv2, datetime, nova_client
+import os, rawpy, cv2, datetime
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from astropy.wcs import WCS
@@ -346,19 +345,19 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streak_filepath = str(output) + '/detected_streaks/' + file.replace('.NEF', '_streak_' + str(idx+1) + '.png')
         cv2.imwrite(streak_filepath, streak_image)
 
-        # Location for WCS output from Astrometry.NET
-        wcsfile = str(output) + '/wcs/' + file.replace('.NEF', '_wcs_' + str(idx+1) + '.fits')
+        # Astrometric calibration using solve-field command line application
+        wcspath = os.path.join(output,'wcs')
+        wcsfile = os.path.join(wcspath,  file.replace('.NEF', '_wcs_' + str(idx+1) + '.fits'))
+        cmd= 'solve-field %s -D %s --wcs %s %s' % (solve_field_options, wcspath, wcsfile, streak_filepath)
+        returned_value=os.system(cmd)
 
-        # Compose Astrometry.NET command and run it synchronously (wait for results)
-        cmd = '%s %s --apikey %s --upload %s --wcs %s' % (pythonpath, clientpath, apikey, streak_filepath, wcsfile)
+        # TODO: delete astrometry output that is not the wcs file
 
-	    # TODO: extra logging around this, to identify and debug images that fail astrometric calibration
-        returned_value = os.system(cmd)
-
-        print('returned_value = ' + str(returned_value), flush=True)
+        print('solve-field return value = ' + str(returned_value), flush=True)
 
         # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
         if not os.path.exists(wcsfile):
+            print('Missing WCS file: ' + str(wcsfile), flush=True)
             continue
 
         # Load the WCS & extract the calibration info from the header.
@@ -381,7 +380,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Sets the times for the streak endpoints to be the image
         # timestamp and the timestamp + shutter speed.
         # TODO: Make exposure time a global parameter
-	    # TODO: this isn't used; maybe move to a utility script
+	# TODO: this isn't used; maybe move to a utility script
         time_a = time.time()
         time_b = (time + datetime.timedelta(seconds=5)).time()
 
