@@ -37,4 +37,4 @@ fi
 
 echo "Launching python..."
 
-/usr/local/anaconda/3.9/bin/python3 batch_job.py
+/usr/local/anaconda/3.13/bin/python3 batch_job.py
