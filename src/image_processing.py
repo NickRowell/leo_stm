@@ -20,7 +20,6 @@ TODO: ...the corrupted images then cause problems in the processing, such as dur
 from settings import *
 import os, rawpy, cv2, datetime
 import numpy as np
-from scipy.ndimage import gaussian_filter
 from astropy.wcs import WCS
 from astropy.io import fits
 import fcntl
@@ -70,42 +69,6 @@ def convert_to_grey(rgbimage):
     #cv2.imwrite(str(output) + '/detected_streaks/' + 'grey_new.png', grey)
 
     return signal, var, grey
-
-# TODO: improve cloud detection
-def cloudy_or_clear(greyimage):
-
-    """
-    This function sorts greyscale images of the night sky into two
-    categories: clear or cloudy. Returns Boolean True or False.
-
-    Inputs: Greyscale image, upper intensity bound of background, lower
-    intensity bound for stars, Gaussian filter sigma.
-    Output: True if clear, False if cloudy
-
-    """
-
-    # Make a defocused copy of original image and subtract from original
-    # A cloudy input image results in pure noise, while a clear input image
-    # has points.
-    c = np.abs(greyimage.astype('float64') - gaussian_filter(greyimage, cl_sigma).astype('float64'))
-
-    # Extract rectangular region for cloudy/clear determination
-    subimage = c[row1:row2, col1:col2]
-
-    # Count the number of pixels in the subimage below an intensity threshold 
-    # defined as the background.
-    ignore = len(subimage[np.where(subimage<=cl_background_thresh)])
-
-    # Calculate the percentage of pixels above the brightness threshold, after
-    # low-intensity background pixels have been disregarded.
-    # TODO: this 500*500 should be replaced with the image dimensions from the settings
-    source = len(subimage[np.where(subimage>cl_lower_thresh)])
-    perc = 100*(source)/(500*500 - ignore + 1)
-
-    if perc > 0.:
-        return True
-    else:
-        return False
 
 def circular_kernel(radius):
 
@@ -209,20 +172,6 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     # Convert to standard RGB pixels [0:255]
     rgb = raw.postprocess()
 
-    # Use green channel to estimate cloudiness
-    #is_it_clear = cloudy_or_clear(rgb[:,:,1])
-    # TODO re-enable this when new algorithm is in place. Write out statistics on cloud level for analysis.
-    is_it_clear = True
-
-    # Skip cloudy images
-    if is_it_clear != True:
-
-        # If image is cloudy, records as 'cloudy'
-        processed_images.write(str(file) + ' cloudy' + '\n')
-        processed_images.close()
-        streaks_file.close()
-        return
-
     # Estimate signal, noise and greyscale image
     signal, noise, grey = convert_to_grey(rgb)
 
@@ -286,6 +235,14 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
             # Found a streak! Get the end points, subtracting half the width from
             # each end point to correct for PSF size.
             streaks.append([a[0], a[1], b[0], b[1]])
+
+            # Write out the list of pixels that are part of the streak;
+            # used in Senior Honours Project autumn 2025
+            #pixfile = os.path.join(output,  file.replace('.NEF', '_streak_pixels_' + str(i+1) + '.txt'))
+            #pixwriter = open(pixfile, 'a+')
+            #for x,y in pixels:
+                #pixwriter.write(f"{x:d} {y:d}\n")
+            #pixwriter.close()
 
     # Convert streaks list to array
     streaks = np.asarray(streaks)
@@ -380,7 +337,7 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         # Sets the times for the streak endpoints to be the image
         # timestamp and the timestamp + shutter speed.
         # TODO: Make exposure time a global parameter
-	# TODO: this isn't used; maybe move to a utility script
+        # TODO: this isn't used; maybe move to a utility script
         time_a = time.time()
         time_b = (time + datetime.timedelta(seconds=5)).time()
 

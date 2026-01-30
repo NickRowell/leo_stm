@@ -24,28 +24,7 @@ image_height = 4928
 datadirectory = ''
 
 # Command line parameters for solve-field application
-solve_field_options=''
-
-# Cloudy/clear image detection parameters
-
-# Variation 1: Algorithm using pixel intensities (cloudy_or_clear) #
-
-# Pixel intensity threshold for background noise (disregard pixels below
-# this value)
-cl_background_thresh = 0.05
-
-# Pixel intensity threshold for stars (counts pixels above this intensity)
-cl_lower_thresh=0.1
-
-# Standard deviation of Gaussian filter used to blur the raw image [pixels]
-cl_sigma=10
-
-# Defines boundary of rectangular region used to determine cloudy/clear status
-row1 = int(2000)
-row2 = int(2500)
-col1 = int(2000)
-col2 = int(2500)
-
+solve_field_options='--continue -L 11.5 -H 12.5 -u "arcsecperpix" -N "none" -U "none" --no-plots'
 
 # Satellite streak detection parameters
 
