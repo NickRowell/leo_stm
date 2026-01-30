@@ -7,9 +7,6 @@
 # Location for all outputs
 output = ''
 
-# Path to the python executable
-pythonpath = ''
-
 # Image dimensions; can these be worked out programmatically?
 image_width = 7380
 image_height = 4928
