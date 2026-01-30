@@ -278,6 +278,29 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     print('symlinking ' + str(dest) + ' -> ' + str(src), flush=True)
     os.symlink(src, dest)
 
+    # Compute astrometric solution over full image
+    wcspath = os.path.join(output,'wcs')
+    wcsfile = os.path.join(wcspath,  file.replace('.NEF', '_wcs.fits'))
+
+    # Write grey image to disk
+    grey_filepath = str(output) + '/detected_streaks/' + file.replace('.NEF', '.png')
+    cv2.imwrite(grey_filepath, grey)
+    cmd= 'solve-field %s -D %s --wcs %s %s' % (solve_field_options, wcspath, wcsfile, grey_filepath)
+    solve_field_exit_code=os.system(cmd)
+
+    # Abort if solve-field failed (solve_field_exit_code != 0)
+    if solve_field_exit_code:
+        print('solve-field failed with exit code %d'%(solve_field_exit_code), flush=True)
+        return
+
+    # TODO: delete astrometry output that is not the wcs file?
+
+    # Load the WCS & extract the calibration info from the header.
+    # Note: Throws a warning that the axes of the WCS file are 0
+    # when the expected number of axes is 2. This can be ignored,
+    # the program will continue running.
+    hdu = fits.open(wcsfile)
+    w = WCS(hdu[0].header)
 
     # Debugging: draw lines onto original image
     #for x1, y1, x2, y2 in streaks:
@@ -288,6 +311,18 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     for idx, streak in enumerate(streaks):
 
         x1, y1, x2, y2 = streak
+
+        # Get celestial coordinates of streak end points by deprojecting pixels 
+        # to sky using the WCS info for the full image.
+        ra1, dec1 = w.wcs_pix2world(x1, y1, 0, ra_dec_order=True)
+        ra2, dec2 = w.wcs_pix2world(x2, y2, 0, ra_dec_order=True)
+
+        # Write details of streak to the file
+        fcntl.flock(streaks_file, fcntl.LOCK_EX)
+        streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, str(idx+1), ra1, dec1, x1, y1, ra2, dec2, x2, y2))
+        fcntl.flock(streaks_file, fcntl.LOCK_UN)
+
+        # Get a thumbnail image surrounding the streak, for later inspection
 
         # Note - by convention the origin of the image coordinates is at the upper left corner;
         # x increases to the right and y increases down.
@@ -314,32 +349,9 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         streak_filepath = str(output) + '/detected_streaks/' + file.replace('.NEF', '_streak_' + str(idx+1) + '.png')
         cv2.imwrite(streak_filepath, streak_image)
 
-        # Astrometric calibration using solve-field command line application
-        wcspath = os.path.join(output,'wcs')
-        wcsfile = os.path.join(wcspath,  file.replace('.NEF', '_wcs_' + str(idx+1) + '.fits'))
-        cmd= 'solve-field %s -D %s --wcs %s %s' % (solve_field_options, wcspath, wcsfile, streak_filepath)
-        returned_value=os.system(cmd)
-
-        # TODO: delete astrometry output that is not the wcs file
-
-        print('solve-field return value = ' + str(returned_value), flush=True)
-
-        # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
-        if not os.path.exists(wcsfile):
-            print('Missing WCS file: ' + str(wcsfile), flush=True)
-            continue
-
-        # Load the WCS & extract the calibration info from the header.
-        # Note: Throws a warning that the axes of the WCS file are 0
-        # when the expected number of axes is 2. This can be ignored,
-        # the program will continue running.
-        hdu = fits.open(wcsfile)
-        w = WCS(hdu[0].header)
-
-        # Transform pixel coordinates of streak end points to celestial coordinates.
-        # Remember to translate streak coordinates to thumbnail image frame.
-        ra1, dec1 = w.wcs_pix2world(x1 - x_lo, y1 - y_lo, 0, ra_dec_order=True)
-        ra2, dec2 = w.wcs_pix2world(x2 - x_lo, y2 - y_lo, 0, ra_dec_order=True)
+        # Resolve streak end point timing from timestamp in filename.
+        # NOT USED CURRENTLY! Also - more accurate timie stamp is available in
+        # in the exif metadata stored in the NEF file.
 
         # Extracts timestamp from filename and converts into a datetime object
         filename_list = list(str(file))
@@ -348,15 +360,9 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
 
         # Sets the times for the streak endpoints to be the image
         # timestamp and the timestamp + shutter speed.
-        # TODO: Make exposure time a global parameter
-        # TODO: this isn't used; maybe move to a utility script
         time_a = time.time()
-        time_b = (time + datetime.timedelta(seconds=5)).time()
+        time_b = (time + datetime.timedelta(exposure_time)).time()
 
-        # Write details of streak to the file
-        fcntl.flock(streaks_file, fcntl.LOCK_EX)
-        streaks_file.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (file, str(idx+1), ra1, dec1, x1, y1, ra2, dec2, x2, y2))
-        fcntl.flock(streaks_file, fcntl.LOCK_UN)
 
     # Record image as clear_streak, with number of streaks
     fcntl.flock(processed_images, fcntl.LOCK_EX)

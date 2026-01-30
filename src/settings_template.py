@@ -11,6 +11,9 @@ output = ''
 image_width = 7380
 image_height = 4928
 
+# Exposure time [seconds]
+exposure_time = 5
+
 #########################################
 #                                       #
 #      Image processing parameters      #
@@ -21,7 +24,7 @@ image_height = 4928
 datadirectory = ''
 
 # Command line parameters for solve-field application
-solve_field_options='--continue -L 11.5 -H 12.5 -u "arcsecperpix" -N "none" -U "none" --no-plots'
+solve_field_options='--continue -L 12.12 -H 12.13 -u "arcsecperpix" -N "none" -U "none" --no-plots --use-sextractor --crpix-center -t 3'
 
 # Satellite streak detection parameters
 
