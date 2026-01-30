@@ -63,8 +63,9 @@ def convert_to_grey(rgbimage):
     # Compute variance weighted average of background-subtracted image
     signal = ((r.astype('float64')-r_bkg)/r_bkg + (g.astype('float64')-g_bkg)/g_bkg + (b.astype('float64')-b_bkg)/b_bkg) * var
 
-    # Simple greyscale image for use with astrometry.NET and visualisation
-    grey = np.add(r * 0.1, g * 0.6, b * 0.3)
+    # Compose a greyscale image from the R/G/B channels. These weights agree
+    # with Matlab rgb2gray, derived from ITU-R Recommendation BT.601
+    grey = np.add(np.add(r * 0.298936021293775, g * 0.587043074451121), b * 0.114020904255103).astype('uint8')
 
     #cv2.imwrite(str(output) + '/detected_streaks/' + 'grey_new.png', grey)
 
@@ -169,12 +170,23 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
     # Read raw NEF image
     raw = rawpy.imread(datadirectory + file)
 
-    # Convert to standard RGB pixels [0:255]
-    rgb = raw.postprocess()
+    # Post-process the NEF to standard RGB image. This involves demosaicing to
+    # compose the RGB channels. Note that rawpy offers control over how the 
+    # postprocessing / demosaicing is done. The gamma=(1,1), no_auto_bright=True
+    # are recommended to obtain pixel values that are linear in the number of
+    # incident photons. See:
+    # https://stackoverflow.com/questions/49459630/rawpy-how-to-postprocess-raw-images-without-adulterating-pixel-data
 
+    # 8-bit pixels [0:255]
+    rgb8 = raw.postprocess(gamma=(1,1), no_auto_bright=True)
+
+    # 16-bit pixels [0:65535] - good for photometry but NOT SUPPORTED BY OPENCV2 FUNCTIONS!!!
+    #rgb16 = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+    
     # Estimate signal, noise and greyscale image
-    signal, noise, grey = convert_to_grey(rgb)
+    signal, noise, grey = convert_to_grey(rgb8)
 
+    # Noise-thresholded source image
     source = np.where(signal < source_extraction_sigmas*np.sqrt(noise), 0, 255)
 
     # Debugging: store raw source image
