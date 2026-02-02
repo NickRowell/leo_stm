@@ -293,6 +293,11 @@ def process_image(datadirectory, file, streaks_file, processed_images, output):
         print('solve-field failed with exit code %d'%(solve_field_exit_code), flush=True)
         return
 
+    # Abort if WCS file has not been written despite exit code 0...
+    if not os.path.exists(wcsfile):
+        print('Missing WCS file %s (exit code %d)'%(str(wcsfile),solve_field_exit_code), flush=True)
+        return
+
     # TODO: delete astrometry output that is not the wcs file?
 
     # Load the WCS & extract the calibration info from the header.
