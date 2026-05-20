@@ -15,6 +15,8 @@ from astropy.coordinates import SkyCoord, FK5
 from astropy.io import fits
 from astropy.wcs import WCS, utils
 from spacetrack import SpaceTrackClient
+import spacetrack.operators as op
+from time import sleep
 from identification_settings import *
 
 # Mutes pandas' copy of dataframe outputs to clean run logs
@@ -206,16 +208,18 @@ class IdentifySatellites(object):
         tle_data = pd.DataFrame()
 
         # Loops back x days into the past from the above date to download catalogues from space-track
-        days_back = 14
+        days_back = 7
         print("       Loading space-track catalogues:")
         for i in range(-1,days_back):
             # Builds a string representing the date range of the query to be sent to space-track's API
             #     Format: YYYY-mm-dd--YYYY-mm-dd
-            this_date = date - timedelta(days = i+1)
-            this_date_end = date - timedelta(days = i)
-            this_date_list = [this_date.year, this_date.month, this_date.day]
-            this_date_list_end = [this_date_end.year, this_date_end.month, this_date_end.day]
-            date_query = "-".join([str(x).zfill(2) for x in this_date_list])+"--"+"-".join([str(x).zfill(2) for x in this_date_list_end])
+            this_date = date - timedelta(days = i+1)+timedelta(hours=15.5)
+            this_date_end = date - timedelta(days = i)+timedelta(hours=9)
+#            this_date_list = [this_date.year, this_date.month, this_date.day]
+#            this_date_list_end = [this_date_end.year, this_date_end.month, this_date_end.day]
+#            date_query = "-".join([str(x).zfill(2) for x in this_date_list])+"--"+"-".join([str(x).zfill(2) for x in this_date_list_end])
+            date_query_st = op.inclusive_range(this_date, this_date_end)
+            date_query = this_date.strftime('%Y-%m-%d_%H%M%S')+'--'+this_date_end.strftime('%Y-%m-%d_%H%M%S')
 
             # Loops through all the files found in the working directory to determine if a catalog has already been downloaded for the given date range
             cat_file = []
@@ -231,8 +235,9 @@ class IdentifySatellites(object):
                 # Otherwise uses the spacetrack package to download data from space-track
                 print("         API-accessing space-track.org data for this date     {}".format(date_query))
                 st = SpaceTrackClient(identity=self.spacetrack_email, password=self.spacetrack_password)
-                data = st.gp_history(creation_date=date_query,format='csv')
-
+                data = st.gp_history(creation_date=date_query_st,format='csv')
+                # Add 150-s delay to limit frequency of API queries 
+                sleep(150) 
                 # Formats data correctly so it can be stored in a pandas dataframe
                 data = data.replace('"', '')
                 # [:-1] removes final element of list since the csv string ends with \n. [1:] separates headers into actual headers of df
@@ -295,7 +300,9 @@ class IdentifySatellites(object):
         """
         # Loads the wcs.fits file and gets bounds & times of images etc.
         wcs_filename = streaklet_data[0].replace("streak","wcs")
-        wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
+ #       wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
+        wcs_filepath = self.wcs_path+'/'+wcs_filename[:wcs_filename.rfind('_')]+'.fits'
+
         f = fits.open(wcs_filepath)
 
         # Prevents printing error message about 'WCS transformation has more axes (2)...'
@@ -474,7 +481,11 @@ class IdentifySatellites(object):
             wcs_filename = self.streaklets.iloc[i][0].replace("streak","wcs")
 
             # Ensure that WCS file exists; occasionally the call to Astrometry.NET finishes without returning results.
-            wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
+#            wcs_filepath = self.wcs_path+'/'+wcs_filename[:-4]+'.fits'
+            wcs_filepath = self.wcs_path+'/'+wcs_filename[:wcs_filename.rfind('_')]+'.fits'
+
+            print("TESTING: \n wcs_filename="+wcs_filename+"\n wcs_filepath="+wcs_filepath)
+
             if not os.path.exists(wcs_filepath):
                 print("\nNon-existent WCS file: ",wcs_filename)
                 continue
@@ -526,8 +537,11 @@ class IdentifySatellites(object):
         # Create some empty columns and then fill them within the for loop
         self.streaklets["Time1"], self.streaklets["Time2"] = "", ""
         for i in range(len(self.streaklets)):
-            self.streaklets["Time1"][i] = datetime.strptime(self.streaklets['Filename'][i][4:21],'%Y-%m-%d_%H%M%S')
-            self.streaklets["Time2"][i] = self.streaklets["Time1"][i] + timedelta(seconds=self.exposure_time)
+#            self.streaklets["Time1"][i] = datetime.strptime(self.streaklets['Filename'][i][4:21],'%Y-%m-%d_%H%M%S')
+#            self.streaklets["Time2"][i] = self.streaklets["Time1"][i] + timedelta(seconds=self.exposure_time)
+            self.streaklets.loc[i,"Time1"] = datetime.strptime(self.streaklets['Filename'][i][4:21],'%Y-%m-%d_%H%M%S')
+            self.streaklets.loc[i,"Time2"] = self.streaklets["Time1"][i] + timedelta(seconds=self.exposure_time)
+
 
         num_identifications = 0
         # Creates new instance of self.streaklets that can be updated without overwriting original
